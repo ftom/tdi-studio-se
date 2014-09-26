@@ -469,9 +469,11 @@ public class PersistentSortedLookupManager<B extends IPersistableComparableLooku
                 if (lookupKey.compareTo(key) == 0 && previousResultRetrieved) {
                     nextIsPreviousResult = true;
                 } else {
+                	previousResultRetrieved = false;
                     previousResult = null;
                 }
             } catch (NullPointerException e) {
+            	previousResultRetrieved = false;
                 previousResult = null;
             }
             noMoreNext = false;
