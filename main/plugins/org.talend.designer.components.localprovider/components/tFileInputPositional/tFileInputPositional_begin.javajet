@@ -20,12 +20,13 @@
 	INode node = (INode)codeGenArgument.getArgument();
 	String cid = node.getUniqueName();
 	
-	List< ? extends IConnection> conns = node.getOutgoingSortedConnections();
+	List<? extends IConnection> conns = node.getOutgoingSortedConnections();
 	List<? extends IConnection> connsFlow = node.getOutgoingConnections("FLOW");
 
     String rejectConnName = "";
     List<? extends IConnection> rejectConns = node.getOutgoingConnections("REJECT");
 	List<IMetadataTable> metadatas = node.getMetadataList();
+	List<String> unsupportedDataType4readBinary = java.util.Arrays.asList("BigDecimal","Boolean","List","Document","Dynamic");
 	if ((metadatas!=null)&&(metadatas.size()>0)) {
 		IMetadataTable metadata = metadatas.get(0);
 		if (metadata!=null) {
@@ -46,6 +47,7 @@
             String pattern1 = ElementParameterParser.getValue(node, "__PATTERN__");
             
             boolean useByte = ("true").equals(ElementParameterParser.getValue(node, "__USE_BYTE__"));
+            boolean readBinary = "true".equals(ElementParameterParser.getValue(node, "__READ_BINARY__")) && useByte;
             boolean advanced = ("true").equals(ElementParameterParser.getValue(node, "__ADVANCED_OPTION__"));
             
 			String filename = ElementParameterParser.getValueWithUIFieldKey(node,"__FILENAME__", "FILENAME");
@@ -98,14 +100,18 @@
     		
     		String pattern=TalendTextUtils.removeQuotes(pattern1);
     		String[] positions=(pattern.trim()).split(",");
+    		int bytesPerRecord = 0;
     		for(int i=0;i<positions.length;i++){
             	if(("").equals(positions[i])){
                	 	positions[i]="0";
             	}
             	if(("*").equals(positions[i])){
             		useStar = true;
+            		bytesPerRecord = -1;
             	}
+            	if(readBinary && !advanced && !useStar){ bytesPerRecord += Integer.valueOf(positions[i].trim()); }
             }
+
 			boolean hasDynamic = metadata.isDynamicSchema();
 			String dynamic = ElementParameterParser.getValue(node, "__DYNAMIC__");
 			boolean useExistingDynamic = "true".equals(ElementParameterParser.getValue(node, "__USE_EXISTING_DYNAMIC__"));
@@ -136,6 +142,61 @@ class Arrays_<%=cid %>{
                          Math.min(original.length - from, newLength));
         return copy;
     }
+
+<% if(readBinary){ %>
+	private final java.util.Map<String,Integer>  javaTypeMapping = new java.util.HashMap<String,Integer>();
+			{
+				javaTypeMapping.put("unsupported",-1);
+			    javaTypeMapping.put("char",0);
+			    javaTypeMapping.put("double",1);
+			    javaTypeMapping.put("float",2);
+			    javaTypeMapping.put("int",3);
+			    javaTypeMapping.put("long",4);
+			    javaTypeMapping.put("short",5);
+			    javaTypeMapping.put("byte",6);
+			}
+    public Object convertByteBuffer2Obj(byte[] bytArr,int allocateByts,boolean useBigEndian,String simpleClazzName){
+    		if(allocateByts <= 0 || allocateByts < bytArr.length){ throw new IllegalArgumentException("'allocateByts' must equal or greater than 'bytArr.length'."); }
+    	    java.nio.ByteBuffer byteBuffer = java.nio.ByteBuffer.allocate(allocateByts);
+    	    byteBuffer.clear();
+    	    if(useBigEndian){
+    	    	 byteBuffer.order(java.nio.ByteOrder.BIG_ENDIAN);
+    	    }else{
+    	    	 byteBuffer.order(java.nio.ByteOrder.LITTLE_ENDIAN);
+    	    }
+    	    byteBuffer.put(bytArr);
+    	    byteBuffer.flip();
+    	    int typeIntValue = this.javaTypeMapping.get(simpleClazzName);
+    	    Object result = null;
+    	    switch(typeIntValue){
+    	    	case 0:
+    	    		 result = Character.valueOf(byteBuffer.getChar());
+    	    		 break;
+	    		case 1:
+	    			 result = Double.valueOf(byteBuffer.getDouble());
+	    			 break;
+			 	case 2:
+			 		 result = Float.valueOf(byteBuffer.getFloat());
+			 		 break;
+		 	 	case 3:
+		 	 		 result = Integer.valueOf(byteBuffer.getInt());
+		 	 		 break;
+	 	 	 	case 4:
+	 	 	 		 result = Long.valueOf(byteBuffer.getLong());
+	 	 	 		 break;
+ 	 		    case 5:
+ 	 		    	 result = Short.valueOf(byteBuffer.getShort());
+ 	 		    	 break;
+ 	 		    case 6:
+ 	 		    	 result = Byte.valueOf(byteBuffer.get());
+ 	 		    	 break;
+	    	    case -1:
+	    	    	 throw new RuntimeException("");
+    	    }
+    	    return result;
+    }
+<% } %>
+
 }
 Arrays_<%=cid %> arrays_<%=cid %> = new Arrays_<%=cid %>();
 <%
@@ -166,7 +227,12 @@ if (conns!=null) {
     					if(valueN%100==0){
 %>
                   void setValue_<%=(valueN/100)%>(<%=firstConnName %>Struct <%=firstConnName %>,int[] begins_<%=cid %>,int[] ends_<%=cid %>,int rowLen_<%=cid %>,
-                  <% if(useByte){ %>byte[] byteArray_<%=cid %>,Arrays_<%=cid %> arrays_<%=cid %>,<% } %>String column_<%=cid %>,String row_<%=cid %>)throws java.lang.Exception {             
+                  <% if(useByte){ %>byte[] byteArray_<%=cid %>,Arrays_<%=cid %> arrays_<%=cid %>,<% } %>String column_<%=cid %>,
+                  <% if(readBinary){%>
+                     byte[] byts_<%= cid %>
+                  <%}else{%>
+                     String row_<%=cid %>
+                  <%} %>)throws java.lang.Exception {
 <%
 }
     					if(valueN == sizeListColumns - 1 && useStar){ //last column
@@ -193,11 +259,21 @@ if (conns!=null) {
 %>
 	if(begins_<%=cid %>[<%=valueN %>] < rowLen_<%=cid %>){
         if(ends_<%=cid %>[<%=valueN %>] <= rowLen_<%=cid %>){
-        	byteArray_<%=cid %> = arrays_<%=cid %>.copyOfRange(row_<%=cid %>.getBytes(<%=encoding %>),begins_<%=cid %>[<%=valueN %>],ends_<%=cid %>[<%=valueN %>]);
+        	byteArray_<%=cid %> = arrays_<%=cid %>.copyOfRange(
+		        	<% if(readBinary){%>  byts_<%= cid %>
+		        	<%}else{%> row_<%=cid %>.getBytes(<%=encoding %>)
+		        	<%} %>,begins_<%=cid %>[<%=valueN %>],ends_<%=cid %>[<%=valueN %>]
+        	);
         }else{
-        	byteArray_<%=cid %> = arrays_<%=cid %>.copyOfRange(row_<%=cid %>.getBytes(<%=encoding %>),begins_<%=cid %>[<%=valueN %>],rowLen_<%=cid %>);
+        	byteArray_<%=cid %> = arrays_<%=cid %>.copyOfRange(
+		        	<% if(readBinary){%>  byts_<%= cid %>
+		        	<%}else{%> row_<%=cid %>.getBytes(<%=encoding %>)
+		        	<%} %>,begins_<%=cid %>[<%=valueN %>],rowLen_<%=cid %>
+        	);
 		}
-		column_<%=cid %> = TalendString.talendTrim(new String(byteArray_<%=cid %>,<%=encoding %>), <%=paddingChar %>, <%=align %>);
+		<% if(!readBinary){%>
+		   column_<%=cid %> = TalendString.talendTrim(new String(byteArray_<%=cid %>,<%=encoding %>), <%=paddingChar %>, <%=align %>);
+		<%}%>
     }else{
     	column_<%=cid %> = "";
     }
@@ -223,11 +299,15 @@ if (conns!=null) {
 						}
 					IMetadataColumn column = listColumns.get(valueN);
 					String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getTalendType(), column.isNullable());
+					System.out.println("=typeToGenerate=>"+typeToGenerate+"<==");
 					JavaType javaType = JavaTypesManager.getJavaTypeFromId(column.getTalendType());
 					String patternValue = column.getPattern() == null || column.getPattern().trim().length() == 0 ? null : column.getPattern();
 					if(javaType == JavaTypesManager.STRING || javaType == JavaTypesManager.OBJECT) {
 %>
-	<%=firstConnName %>.<%=column.getLabel() %> = column_<%=cid %>;
+					<% if(readBinary){ %>
+					   column_<%=cid %> = new String(byteArray_<%= cid %>,<%= encoding %>);
+					<%} %>
+					<%=firstConnName %>.<%=column.getLabel() %> = column_<%=cid %>;
 <%
 					} else if("id_Dynamic".equals(column.getTalendType())){
 						if(useExistingDynamic){
@@ -246,8 +326,13 @@ if (conns!=null) {
 <%
 								if(useByte){
 %>
-									byte[] temp_byteArray_<%=cid %> = arrays_<%=cid %>.copyOfRange(row_<%=cid %>.getBytes(<%=encoding %>),substringBegin<%=cid %>, substringEnd<%=cid %>);
-									String currentColumnValue_<%=cid%> = new String(temp_byteArray_<%=cid %>,<%=encoding %>);						
+									byte[] temp_byteArray_<%=cid %> = arrays_<%=cid %>.copyOfRange(
+																									   <% if(readBinary){%> row_<%=cid %>
+																									   <%}else{%> row_<%=cid %>.getBytes(<%=encoding %>)
+																									   <%} %>
+																									   ,substringBegin<%=cid %>, substringEnd<%=cid %>
+																								   );
+									String currentColumnValue_<%=cid%> = new String(temp_byteArray_<%=cid %>,<%=encoding %>);
 <%
 								}else{
 %>
@@ -281,9 +366,17 @@ if (conns!=null) {
 						}
 					} else {
 %>
-	if(column_<%=cid %>.length() > 0) {
+
+	<% if(!readBinary){%>
+	   if(column_<%=cid %>.length() > 0) {
+	<%} %>
 <%
 						if(javaType == JavaTypesManager.DATE) {
+						    if(readBinary){
+						          %>
+						             column_<%=cid %> = new String(byteArray_<%= cid %>,<%= encoding %>);
+						          <%
+						    }
 							if(checkDate) {
 %>
 		<%=firstConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_Date(column_<%=cid %>, <%= patternValue %>,false);
@@ -293,23 +386,49 @@ if (conns!=null) {
 		<%=firstConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_Date(column_<%=cid %>, <%= patternValue %>);
 <%
 							}
-						}else if(advancedSeparator && JavaTypesManager.isNumberType(javaType, column.isNullable())) { 
+						}else if(advancedSeparator && JavaTypesManager.isNumberType(javaType, column.isNullable())) {
+							if(readBinary){
+ 								%>
+ 									<%=firstConnName %>.<%=column.getLabel() %> = (<%= typeToGenerate %>)arrays_<%= cid %>.convertByteBuffer2Obj(byteArray_<%= cid %>,byteArray_<%= cid %>.length,true,"<%= javaType.getPrimitiveClass().getSimpleName() %>");
+ 								<%
+						   }else{
+							   	%>
+							   	  <%=firstConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_<%= typeToGenerate %>(ParserUtils.parseTo_Number(column_<%=cid %>, <%= thousandsSeparator %>, <%= decimalSeparator %>));
+							   	<%
+						   }
+					   
+						}else if(javaType == JavaTypesManager.BYTE_ARRAY) {
 %>
-		<%=firstConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_<%= typeToGenerate %>(ParserUtils.parseTo_Number(column_<%=cid %>, <%= thousandsSeparator %>, <%= decimalSeparator %>));
-<%
-					}else if(javaType == JavaTypesManager.BYTE_ARRAY) {
-%>
-		<%=firstConnName %>.<%=column.getLabel() %> = column_<%=cid %>.getBytes(<%=encoding%>);
+							   <% if(readBinary){%>
+							            <%=firstConnName %>.<%=column.getLabel() %> = byts_<%= cid %>;
+							   <%}else{%>
+							      		<%=firstConnName %>.<%=column.getLabel() %> = column_<%=cid %>.getBytes(<%=encoding%>);
+							   <%} %>
 <%
 							} else {
+								if(readBinary){
+	 								%>
+									  <% if(unsupportedDataType4readBinary.contains(typeToGenerate)){%>
+									          System.err.println("Unsupported data type '<%= typeToGenerate %>' for reading binary file"); <% /* Don't remove this statement. */ %>
+									          <%=firstConnName %>.<%=column.getLabel() %> = (<%= typeToGenerate %>)arrays_<%= cid %>.convertByteBuffer2Obj(byteArray_<%= cid %>,byteArray_<%= cid %>.length,true,"unsupported");
+									  <%}else{ %>
+									  		  <%=firstConnName %>.<%=column.getLabel() %> = (<%= typeToGenerate %>)arrays_<%= cid %>.convertByteBuffer2Obj(byteArray_<%= cid %>,byteArray_<%= cid %>.length,true,"<%= javaType.getPrimitiveClass().getSimpleName() %>");
+									  <% } %>
+	 								<%
+							   }else{
+								   	%>
+								   	 <%=firstConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_<%= typeToGenerate %>(column_<%=cid %>);
+								   	<%
+							   }
+						   }
 %>
-		<%=firstConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_<%= typeToGenerate %>(column_<%=cid %>);
-<%
-							}
-%>
-    }else{
-    	<%=firstConnName %>.<%=column.getLabel() %> = <%=JavaTypesManager.getDefaultValueFromJavaType(typeToGenerate)%>;
-    }
+    <% if(!readBinary){
+    	%>
+    	   }else{
+    			<%=firstConnName %>.<%=column.getLabel() %> = <%=JavaTypesManager.getDefaultValueFromJavaType(typeToGenerate)%>;
+    	  }
+    	<%
+    } %>
 <%					
 					}
 					
@@ -329,9 +448,43 @@ if (conns!=null) {
 				for (int valueN=0; valueN<sizeListColumns; valueN++) {	
 				    if(valueN%100==0){
 %>
-                     void setValue_<%=(valueN/100)%>(<%=firstConnName %>Struct <%=firstConnName %>,String[] columnValue<%=cid %>)throws java.lang.Exception{
+                     <% if(readBinary){
+                            %>
+                              void setValue_<%=(valueN/100)%>(<%=firstConnName %>Struct <%=firstConnName %>,int[] begins_<%=cid %>,int[] ends_<%=cid %>,int rowLen_<%=cid %>,
+                                                <% if(useByte){ %>byte[] byteArray_<%=cid %>,Arrays_<%=cid %> arrays_<%=cid %>,<% } %>String column_<%=cid %>,
+                                                <% if(readBinary){%>
+                                                   byte[] byts_<%= cid %>
+                                                <%}else{%>
+                                                   String row_<%=cid %>
+                                                <%} %>)throws java.lang.Exception {
+                                    <%
+                             }else{
+        		                     %>
+        		                        void setValue_<%=(valueN/100)%>(<%=firstConnName %>Struct <%=firstConnName %>,String[] columnValue<%=cid %>)throws java.lang.Exception{
+        		                     <%
+                             } %>
 <%
-                    }	
+                    }
+					if(readBinary){
+	              %>
+	                  	if(begins_<%=cid %>[<%=valueN %>] < rowLen_<%=cid %>){
+	                          if(ends_<%=cid %>[<%=valueN %>] <= rowLen_<%=cid %>){
+	                          	byteArray_<%=cid %> = arrays_<%=cid %>.copyOfRange(
+	                  		        	<% if(readBinary){%> byts_<%= cid %>
+	                  		        	<%}else{%> row_<%=cid %>.getBytes(<%=encoding %>)
+	                  		        	<%} %> ,begins_<%=cid %>[<%=valueN %>],ends_<%=cid %>[<%=valueN %>]
+	                          	);
+	                          }else{
+	                          	byteArray_<%=cid %> = arrays_<%=cid %>.copyOfRange(
+	                  		        	<% if(readBinary){%> byts_<%= cid %>
+	                  		        	<%}else{%> row_<%=cid %>.getBytes(<%=encoding %>)
+	                  		        	<%} %>,begins_<%=cid %>[<%=valueN %>],rowLen_<%=cid %>
+	                          	);
+	                  		}
+	                      }else{
+	                      	column_<%=cid %> = "";
+	                      }
+	                <%}
 %>
 <%
                     IMetadataColumn column = listColumns.get(valueN);
@@ -340,15 +493,33 @@ if (conns!=null) {
 					String patternValue = column.getPattern() == null || column.getPattern().trim().length() == 0 ? null : column.getPattern();
 					if(javaType == JavaTypesManager.STRING || javaType == JavaTypesManager.OBJECT) {
 %>
-	                    <%=firstConnName %>.<%=column.getLabel() %> = columnValue<%=cid %>[<%=valueN%>];
+					<% 
+					   if(readBinary){
+					         %>
+					            column_<%=cid %> = new String(byteArray_<%= cid %>,<%= encoding %>);
+					            <%=firstConnName %>.<%=column.getLabel() %> = column_<%=cid %>;
+					         <%
+					   }else{
+					        %>
+					           <%=firstConnName %>.<%=column.getLabel() %> = columnValue<%=cid %>[<%=valueN%>];
+					        <%
+					   }
+					 %>
 <%
 					}else if("id_Dynamic".equals(column.getTalendType())){
 					
 					} else {
 %>
-	                    if(columnValue<%=cid %>[<%=valueN%>].length() > 0) {
+	                    <% if(!readBinary){ %>
+	                       if(columnValue<%=cid %>[<%=valueN%>].length() > 0) {
+	                    <% } %>
 <%
 					        if(javaType == JavaTypesManager.DATE) {
+						        if(readBinary){
+						              %>
+						                 column_<%=cid %> = new String(byteArray_<%= cid %>,<%= encoding %>);
+						              <%
+						        }
 								if(checkDate) {
 %>	
 		                            <%=firstConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_Date(columnValue<%=cid %>[<%=valueN%>], <%= patternValue %>,false);
@@ -358,23 +529,44 @@ if (conns!=null) {
 		                            <%=firstConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_Date(columnValue<%=cid %>[<%=valueN%>], <%= patternValue %>);	
 <%
 								}
-							}else if(advancedSeparator && JavaTypesManager.isNumberType(javaType, column.isNullable())) { 
-%>
-		                        <%=firstConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_<%= typeToGenerate %>(ParserUtils.parseTo_Number(columnValue<%=cid %>[<%=valueN%>], <%= thousandsSeparator %>, <%= decimalSeparator %>));
-<%
-					        }else if(javaType == JavaTypesManager.BYTE_ARRAY) {
-%>	
-		                        <%=firstConnName %>.<%=column.getLabel() %> = columnValue<%=cid %>[<%=valueN%>].getBytes(<%=encoding%>);
+							}else if(advancedSeparator && JavaTypesManager.isNumberType(javaType, column.isNullable())) {
+									if(readBinary){
+		 								%>
+			 								<%=firstConnName %>.<%=column.getLabel() %> = (<%= typeToGenerate %>)arrays_<%= cid %>.convertByteBuffer2Obj(byteArray_<%= cid %>,byteArray_<%= cid %>.length,true,"<%= javaType.getPrimitiveClass().getSimpleName() %>");
+		 								<%
+								   }else{
+									   	%>
+									   	  <%=firstConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_<%= typeToGenerate %>(ParserUtils.parseTo_Number(columnValue<%=cid %>[<%=valueN%>], <%= thousandsSeparator %>, <%= decimalSeparator %>));
+									   	<%
+								   }
+						}else if(javaType == JavaTypesManager.BYTE_ARRAY) {
+						 if(readBinary){%>
+							            <%=firstConnName %>.<%=column.getLabel() %> = byts_<%= cid %>;
+							   <%}else{%>
+							      		<%=firstConnName %>.<%=column.getLabel() %> = column_<%=cid %>.getBytes(<%=encoding%>);
+							   <%} %>
 <%
 							} else {
-%>	
-		                        <%=firstConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_<%= typeToGenerate %>(columnValue<%=cid %>[<%=valueN%>].trim());
+							   if(readBinary){
+				                         if(unsupportedDataType4readBinary.contains(typeToGenerate)){%>
+				                                System.err.println("Unsupported data type '<%= typeToGenerate %>' for reading binary file"); <% /* Don't remove this statement. */ %>
+				                                <%=firstConnName %>.<%=column.getLabel() %> = (<%= typeToGenerate %>)arrays_<%= cid %>.convertByteBuffer2Obj(byteArray_<%= cid %>,byteArray_<%= cid %>.length,true,"unsupported");
+				                        <%}else{ %>
+				                        		  <%=firstConnName %>.<%=column.getLabel() %> = (<%= typeToGenerate %>)arrays_<%= cid %>.convertByteBuffer2Obj(byteArray_<%= cid %>,byteArray_<%= cid %>.length,true,"<%= javaType.getPrimitiveClass().getSimpleName() %>");
+				                        <% }
+		                        }else{
+		                        		%>
+		                        		   <%=firstConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_<%= typeToGenerate %>(columnValue<%=cid %>[<%=valueN%>].trim());
+		                        		<%
+		                        } %>
 <%
 							}
 %>
-                        }else{
-        	                <%=firstConnName %>.<%=column.getLabel() %> = <%=JavaTypesManager.getDefaultValueFromJavaType(typeToGenerate)%>;
-                        }
+		<% if(!readBinary){ %>
+                   }else{
+   	                <%=firstConnName %>.<%=column.getLabel() %> = <%=JavaTypesManager.getDefaultValueFromJavaType(typeToGenerate)%>;
+                   }
+		<%} %>
 <%
         			}
 %>
@@ -406,14 +598,17 @@ if (conns!=null) {
 PositionalUtil_<%=cid%> positionalUtil_<%=cid%>=new PositionalUtil_<%=cid%>();
 
 <%
-		if(advanced){
+		if((readBinary && advanced) || advanced){
 %>
 
 int[] sizes_<%=cid %> = new int[<%=formats.size() %>];
 int[] begins_<%=cid %> = new int[<%=formats.size() %>];
 int[] ends_<%=cid %> = new int[<%=formats.size() %>];
 <%
-			for(int i = 0; i < formats.size(); i++){ 
+			for(int i = 0; i < formats.size(); i++){
+				if(readBinary && "*".equals(formats.get(i).get("SIZE"))){
+					bytesPerRecord = -1;
+				}
 				if(i == formats.size() - 1 && !(("").equals(rowSeparator) || ("\"\"").equals(rowSeparator))){
 					if(("*").equals(formats.get(i).get("SIZE"))){ 
 						useStar = true;
@@ -427,7 +622,8 @@ sizes_<%=cid %>[<%=i %>] = <%=formats.get(i).get("SIZE") %>;
 <%
 				}
 			}
-			for(int i = 0; i < formats.size(); i++){ 
+			for(int i = 0; i < formats.size(); i++){
+				if(readBinary && advanced && !useStar){ bytesPerRecord += Integer.valueOf(positions[i].trim()); }
 				if(i == 0){
 %>
 begins_<%=cid %>[<%=i %>] = 0;
@@ -445,16 +641,54 @@ ends_<%=cid %>[<%=i %>] = ends_<%=cid %>[<%=i-1 %>] + sizes_<%=cid %>[<%=i %>];
 <%
 				}
 			}
-		}//end if(advanced)
+		}else if(readBinary && !advanced){
+%>
+	int[] sizes_<%=cid %> = new int[<%= positions.length %>];
+	int[] begins_<%=cid %> = new int[<%= positions.length %>];
+	int[] ends_<%=cid %> = new int[<%= positions.length %>];
+
+	<% for(int i=0;i<positions.length;i++){
+		%>
+		   <% if(useStar){ %>
+		          sizes_<%=cid %>[<%=i %>] = 0;
+		   <% }else{
+	   		   %>
+	   		      sizes_<%=cid %>[<%=i %>] = Integer.valueOf(<%= positions[i].trim() %>);
+	   		   <%
+		   } %>
+		<%
+		if(i==0){%>
+		   begins_<%=cid %>[<%=i %>] = 0;
+		   ends_<%=cid %>[<%=i %>] = sizes_<%=cid %>[<%=i %>];
+		<%}else{%>
+		   begins_<%=cid %>[<%=i %>] = begins_<%=cid %>[<%=i-1 %>] + sizes_<%=cid %>[<%=i-1 %>];
+		   ends_<%=cid %>[<%=i %>] = ends_<%=cid %>[<%=i-1 %>] + sizes_<%=cid %>[<%=i %>];
+		<%}
+	} %>
+<%
+		}
 %>
 Object filename_<%=cid %> = <%=filename %>;
-java.io.BufferedReader in_<%=cid %> = null;
-org.talend.fileprocess.delimited.RowParser reader_<%=cid %> = null; 
+<% if(readBinary){//TDI-30656
+	%>
+	   java.io.InputStream in_<%=cid %> = null;
+	<%
+}else{
+	%>
+	   java.io.BufferedReader in_<%=cid %> = null;
+	<%
+} %>
+
+<% if(!readBinary){
+	%>
+	   org.talend.fileprocess.delimited.RowParser reader_<%=cid %> = null; 
+	<%
+} %>
 
 <%log4jFileUtil.startRetriveDataInfo();%>
 
 <%
-		if(uncompress){
+		if(uncompress && !readBinary){
 %>
 java.util.zip.ZipInputStream zis_<%=cid %> = null;
 try {
@@ -494,7 +728,11 @@ while (true) {
 	if(entry_<%=cid %>.isDirectory()){ //directory
 		continue;
 	}
-	String row_<%=cid %> = null;
+	<% if(readBinary){%>
+	   	byte[] row_<%=cid %> = null;
+	<%}else{%>
+	   	String row_<%=cid %> = null;
+	<%} %>
 	int rowLen_<%=cid %> = 0;
 	<%
 	if(advanced){
@@ -522,8 +760,13 @@ while (true) {
 <%
 		}else{
 %>
-String row_<%=cid %> = null;
+	<% if(readBinary){%>
+	   	byte[] row_<%=cid %> = null;
+	<%}else{%>
+	   	String row_<%=cid %> = null;
+	<%} %>
 int rowLen_<%=cid %> = 0;
+String column_<%=cid %> = null;
 <%
 if(advanced){
 	if(useByte){
@@ -532,12 +775,16 @@ byte[] byteArray_<%=cid %> = new byte[0];
 <%
 }
 %>
-String column_<%=cid %> = null;
+
 <%
 }else{
 	if(useByte){
 %>
-byte[][] byteArray_<%=cid %> = new byte[<%=metadata.getListColumns().size()%>][];
+<% if(readBinary){%>
+   byte[] byteArray_<%=cid %> = new byte[0];
+<%}else{%>
+   byte[][] byteArray_<%=cid %> = new byte[<%=metadata.getListColumns().size()%>][];
+<%} %>
 <%
 	}
 %>
@@ -547,11 +794,25 @@ String[] columnValue<%=cid %>=new String[<%=metadata.getListColumns().size()%>];
 %> 
 try {//TD110 begin
 	if(filename_<%=cid %> instanceof java.io.InputStream){
-		in_<%=cid %> = 
-				new java.io.BufferedReader(new java.io.InputStreamReader((java.io.InputStream)filename_<%=cid %>, <%=encoding %>));
+		<% if(readBinary){
+		     %>
+		      in_<%=cid %> = (java.io.InputStream)filename_<%=cid %>;
+		     <%
+		}else{
+			 %>
+			in_<%=cid %> = new java.io.BufferedReader(new java.io.InputStreamReader((java.io.InputStream)filename_<%=cid %>, <%=encoding %>));
+			 <%
+		} %>
 	}else{
-		in_<%=cid %> = 
-			new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream(String.valueOf(filename_<%=cid %>)), <%=encoding %>));
+		<% if(readBinary){
+		     %>
+		      in_<%=cid %> = new java.io.FileInputStream(String.valueOf(filename_<%=cid %>));
+		     <%
+		}else{
+			 %>
+			in_<%=cid %> = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream(String.valueOf(filename_<%=cid %>)), <%=encoding %>));	
+			 <%
+		} %>
 	}
 
 <%
@@ -574,44 +835,55 @@ rowLength_<%=cid %> += <%=positions[i] %>;
         			}
 				}
 %>
-reader_<%=cid %> = new org.talend.fileprocess.delimited.RowParser(in_<%=cid %>, rowLength_<%=cid %>);
+				<% if(!readBinary){
+				       %>
+				          reader_<%=cid %> = new org.talend.fileprocess.delimited.RowParser(in_<%=cid %>, rowLength_<%=cid %>);
+				       <%
+				} %>
 <%
 			}else{
 %>
-reader_<%=cid %> = new org.talend.fileprocess.delimited.RowParser(in_<%=cid %>, <%=rowSeparator %>, <%=removeEmptyRow %>);
+				<% if(!readBinary){
+						%>
+						   reader_<%=cid %> = new org.talend.fileprocess.delimited.RowParser(in_<%=cid %>, <%=rowSeparator %>, <%=removeEmptyRow %>);
+						<%
+				} %>
 <%
 			}
 %>
-reader_<%=cid %>.setSafetySwitch(<%=bSafetySwitch%>);
-reader_<%=cid %>.skipHeaders(<%=header %>);
-if(footer_<%=cid %> > 0){
-	int available_<%=cid %> = (int)reader_<%=cid %>.getAvailableRowCount(footer_<%=cid %>);
-	reader_<%=cid %>.close();
-	if(filename_<%=cid %> instanceof java.io.InputStream){
-		in_<%=cid %> = new java.io.BufferedReader(new java.io.InputStreamReader((java.io.InputStream)filename_<%=cid %>, <%=encoding %>));
-	}else{
-		in_<%=cid %> = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream(String.valueOf(filename_<%=cid %>)), <%=encoding %>));
-	}
-<%
-			if(("").equals(rowSeparator) || ("\"\"").equals(rowSeparator) ){
-%>
-	reader_<%=cid %> = new org.talend.fileprocess.delimited.RowParser(in_<%=cid %>, rowLength_<%=cid %>);
-<%
-			}else{
-%>
-	reader_<%=cid %> = new org.talend.fileprocess.delimited.RowParser(in_<%=cid %>, <%=rowSeparator %>, <%=removeEmptyRow %>);
-<%
-			}
-%>	
-	reader_<%=cid %>.skipHeaders(<%=header %>);
-	
-	if ( nb_limit_<%=cid %> >= 0 ){
-		nb_limit_<%=cid %> = ( nb_limit_<%=cid %> > available_<%=cid %>) ? available_<%=cid %> : nb_limit_<%=cid %>;
-	}else{
-		nb_limit_<%=cid %> = available_<%=cid %>;
-	}
-}
-
+	<% if(!readBinary){
+		    %>
+		       reader_<%=cid %>.setSafetySwitch(<%=bSafetySwitch%>);
+		       reader_<%=cid %>.skipHeaders(<%=header %>);
+		       if(footer_<%=cid %> > 0){
+		       	int available_<%=cid %> = (int)reader_<%=cid %>.getAvailableRowCount(footer_<%=cid %>);
+		       	reader_<%=cid %>.close();
+		       	if(filename_<%=cid %> instanceof java.io.InputStream){
+		       			       in_<%=cid %> = new java.io.BufferedReader(new java.io.InputStreamReader((java.io.InputStream)filename_<%=cid %>, <%=encoding %>));
+		       	}else{
+		       		       in_<%=cid %> = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream(String.valueOf(filename_<%=cid %>)), <%=encoding %>));
+		       	}
+		       <%
+		       			if(("").equals(rowSeparator) || ("\"\"").equals(rowSeparator) ){
+		       %>
+		       	reader_<%=cid %> = new org.talend.fileprocess.delimited.RowParser(in_<%=cid %>, rowLength_<%=cid %>);
+		       <%
+		       			}else{
+		       %>
+		       	reader_<%=cid %> = new org.talend.fileprocess.delimited.RowParser(in_<%=cid %>, <%=rowSeparator %>, <%=removeEmptyRow %>);
+		       <%
+		       			}
+		       %>	
+		       	reader_<%=cid %>.skipHeaders(<%=header %>);
+		       	
+		       	if ( nb_limit_<%=cid %> >= 0 ){
+		       		nb_limit_<%=cid %> = ( nb_limit_<%=cid %> > available_<%=cid %>) ? available_<%=cid %> : nb_limit_<%=cid %>;
+		       	}else{
+		       		nb_limit_<%=cid %> = available_<%=cid %>;
+		       	}
+		       }
+		    <%
+	} %>
 } catch(java.lang.Exception e) {//TD110 end
 	<% if(dieOnError) {%>
 	throw e;
@@ -648,12 +920,34 @@ for (int i<%=cid%> = 0; i<%=cid%> < arrFieldSeparator<%=cid %>.length; i<%=cid%>
 <%
 }	
 %>
-while (nb_limit_<%=cid %> != 0 && reader_<%=cid %>!=null && reader_<%=cid %>.readRecord()) {
-	row_<%=cid %> = reader_<%=cid %>.getRowRecord();
+<% if(readBinary){%>
+   if(<%= bytesPerRecord %> == -1){ throw new IllegalArgumentException("Cann't use wildchad '*' when reading binary file."); }
+   byte[] tmpBytsArr_<%= cid %> = new byte[<%= bytesPerRecord %>];
+   int bytsArrLgth_<%= cid %> = tmpBytsArr_<%= cid %>.length;
+<%} %>
+while (nb_limit_<%=cid %> != 0 
+       &&  <% if(!readBinary){%>
+	          reader_<%=cid %> !=null
+	       <%}else{%>
+	          in_<%=cid %> != null
+	       <%} %> 
+	   &&  <% if(!readBinary){%> reader_<%=cid %>.readRecord()
+		   <%}else{%> in_<%= cid %>.read(tmpBytsArr_<%= cid %>) != -1
+		   <%} %>
+	   ) {
+<% if(readBinary){%>
+   row_<%=cid %> = tmpBytsArr_<%= cid %>;
+<%}else{%>
+   	row_<%=cid %> = reader_<%=cid %>.getRowRecord();
+<%} %>
 <%
 	if(useByte){
 %>
-	rowLen_<%=cid %> = row_<%=cid %>.getBytes(<%=encoding %>).length;
+	<% if(readBinary){%>
+	    rowLen_<%=cid %> = bytsArrLgth_<%= cid %>;
+	<%}else{%>
+	   	rowLen_<%=cid %> = row_<%=cid %>.getBytes(<%=encoding %>).length;
+	<%} %>
 <%
 	}else{
 %>
@@ -696,7 +990,7 @@ while (nb_limit_<%=cid %> != 0 && reader_<%=cid %>!=null && reader_<%=cid %>.rea
 			try {
 			
 			<%
-    			if(advanced){
+    			if(advanced && !readBinary){
     				List<IMetadataColumn> listColumns = metadata.getListColumns();
    				   int sizeListColumns = listColumns.size();
     				for (int valueN=0; valueN<sizeListColumns; valueN++) {
@@ -716,6 +1010,15 @@ while (nb_limit_<%=cid %> != 0 && reader_<%=cid %>!=null && reader_<%=cid %>.rea
 <%
                   }
 				}
+			}else if(readBinary){
+	   				for (int valueN=0; valueN<positions.length; valueN++) {
+	                  if(valueN%100==0){
+						 %>
+		                 positionalUtil_<%=cid%>.setValue_<%=(valueN/100)%>(<%=firstConnName %>,begins_<%=cid %>,ends_<%=cid %>,rowLen_<%=cid %>,
+		                 <% if(useByte){ %>byteArray_<%=cid %>,arrays_<%=cid %>,<% } %>column_<%=cid %>,row_<%=cid %>);          
+						 <%
+	                  }
+					}
 			}else{// end if(advance)
 %>
 	int substringBegin<%=cid %>=0,substringEnd<%=cid %>=0;
@@ -751,7 +1054,9 @@ while (nb_limit_<%=cid %> != 0 && reader_<%=cid %>!=null && reader_<%=cid %>.rea
 <%
 					if(useByte){
 %>
-						byte[] temp_byteArray_<%=cid %>= arrays_<%=cid %>.copyOfRange(row_<%=cid %>.getBytes(<%=encoding %>),substringBegin<%=cid %>, substringEnd<%=cid %>);
+						byte[] temp_byteArray_<%=cid %>= arrays_<%=cid %>.copyOfRange(<% if(readBinary){%> row_<%=cid %>
+						<%}else{%> row_<%=cid %>.getBytes(<%=encoding %>)
+						<%} %>,substringBegin<%=cid %>, substringEnd<%=cid %>);
 						String currentColumnValue_<%=cid%> = new String(temp_byteArray_<%=cid %>,<%=encoding %>);						
 <%
 					}else{
@@ -804,7 +1109,11 @@ while (nb_limit_<%=cid %> != 0 && reader_<%=cid %>!=null && reader_<%=cid %>.rea
 					}
 					if(useByte){
 %>
-					byteArray_<%=cid %>[<%=i%>] = arrays_<%=cid %>.copyOfRange(row_<%=cid %>.getBytes(<%=encoding %>),substringBegin<%=cid %>, substringEnd<%=cid %>);
+					byteArray_<%=cid %>[<%=i%>] = arrays_<%=cid %>.copyOfRange(
+																	<% if(readBinary){%> row_<%=cid %>
+																					<%}else{%>  row_<%=cid %>.getBytes(<%=encoding %>)
+																						 <%} %> ,substringBegin<%=cid %>, substringEnd<%=cid %>
+																			  );
 					columnValue<%=cid %>[<%=i%>] = new String(byteArray_<%=cid %>[<%=i%>],<%=encoding %>);
 <%
 					}else{
@@ -857,7 +1166,9 @@ while (nb_limit_<%=cid %> != 0 && reader_<%=cid %>!=null && reader_<%=cid %>.rea
 <%
 						if(useByte){
 %>
-							byte[] temp_byteArray_<%=cid %> = arrays_<%=cid %>.copyOfRange(row_<%=cid %>.getBytes(<%=encoding %>),substringBegin<%=cid %>, substringEnd<%=cid %>);
+							byte[] temp_byteArray_<%=cid %> = arrays_<%=cid %>.copyOfRange(<% if(readBinary){ %>  row_<%=cid %>
+							<%}else{%> row_<%=cid %>.getBytes(<%=encoding %>)
+							<%} %>,substringBegin<%=cid %>, substringEnd<%=cid %>);
 							String currentColumnValue_<%=cid%> = new String(temp_byteArray_<%=cid %>,<%=encoding %>);						
 <%
 						}else{
@@ -900,7 +1211,9 @@ while (nb_limit_<%=cid %> != 0 && reader_<%=cid %>!=null && reader_<%=cid %>.rea
 <%
 		if(useByte){
 %>
-				byteArray_<%=cid %>[i_<%=cid %>] = arrays_<%=cid %>.copyOfRange(row_<%=cid %>.getBytes(<%=encoding %>),substringBegin<%=cid %>, substringEnd<%=cid %>);
+				byteArray_<%=cid %>[i_<%=cid %>] = arrays_<%=cid %>.copyOfRange(<% if(readBinary){%> row_<%=cid %>
+				<%}else{%> row_<%=cid %>.getBytes(<%=encoding %>)
+				<%} %>,substringBegin<%=cid %>, substringEnd<%=cid %>);
 				columnValue<%=cid %>[i_<%=cid %>] = new String(byteArray_<%=cid %>[i_<%=cid %>],<%=encoding %>);
 <%
 		}else{
@@ -924,7 +1237,12 @@ while (nb_limit_<%=cid %> != 0 && reader_<%=cid %>!=null && reader_<%=cid %>.rea
 	for (int valueN=0; valueN<sizeListColumns; valueN++) {	
 		if(valueN%100==0){
 %>
-   positionalUtil_<%=cid%>.setValue_<%=(valueN/100)%>(<%=firstConnName %>,columnValue<%=cid %>);
+   	      <%
+   if(!readBinary){
+   		  %>
+   		     positionalUtil_<%=cid%>.setValue_<%=(valueN/100)%>(<%=firstConnName %>,columnValue<%=cid %>);
+   		  <%
+   } %>
 <%
 	    
 	    }

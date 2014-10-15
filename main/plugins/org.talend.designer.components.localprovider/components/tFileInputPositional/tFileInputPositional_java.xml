@@ -64,6 +64,7 @@
       FIELD="TEXT"
       NUM_ROW="20"
       REPOSITORY_VALUE="ROW_SEPARATOR"
+      NOT_SHOW_IF="READ_BINARY == 'true' AND USE_BYTE == 'true'"
     >
       <DEFAULT>"\n"</DEFAULT>
     </PARAMETER>
@@ -73,6 +74,16 @@
       FIELD="CHECK"
       REQUIRED="true"
       NUM_ROW="29"
+    >
+      <DEFAULT>false</DEFAULT>
+    </PARAMETER>
+
+    <PARAMETER
+      NAME="READ_BINARY"
+      FIELD="CHECK"
+      REQUIRED="true"
+      NUM_ROW="29"
+      SHOW_IF="USE_BYTE == 'true'" 
     >
       <DEFAULT>false</DEFAULT>
     </PARAMETER>
@@ -126,6 +137,7 @@
       REQUIRED="true"
       NUM_ROW="50"
       REPOSITORY_VALUE="REMOVE_EMPTY_ROW"
+      NOT_SHOW_IF="READ_BINARY == 'true' AND USE_BYTE == 'true'"
     >
       <DEFAULT>true</DEFAULT>
     </PARAMETER>
@@ -135,6 +147,7 @@
       FIELD="CHECK"
       SHOW="true"
       NUM_ROW="50"
+      NOT_SHOW_IF="READ_BINARY == 'true' AND USE_BYTE == 'true'"
     >
     	<DEFAULT>false</DEFAULT>
     </PARAMETER>
@@ -152,6 +165,7 @@
       FIELD="TEXT"
       NUM_ROW="70"
       REPOSITORY_VALUE="HEADER"
+      NOT_SHOW_IF="READ_BINARY == 'true' AND USE_BYTE == 'true'"
     >
       <DEFAULT>0</DEFAULT>
     </PARAMETER>
@@ -161,6 +175,7 @@
       FIELD="TEXT"
       NUM_ROW="70"
       REPOSITORY_VALUE="FOOTER"
+      NOT_SHOW_IF="READ_BINARY == 'true' AND USE_BYTE == 'true'"
     >
       <DEFAULT>0</DEFAULT>
     </PARAMETER>
@@ -170,6 +185,7 @@
       FIELD="TEXT"
       NUM_ROW="70"
       REPOSITORY_VALUE="LIMIT"
+      NOT_SHOW_IF="READ_BINARY == 'true' AND USE_BYTE == 'true'"
     >
       <DEFAULT/>
     </PARAMETER>
@@ -199,11 +215,13 @@
   </PARAMETERS>
 
   <ADVANCED_PARAMETERS>
-  	<PARAMETER NAME="PROCESS_LONG_ROW" FIELD="CHECK" REQUIRED="true" NUM_ROW="40">
+  	<PARAMETER NAME="PROCESS_LONG_ROW" FIELD="CHECK" REQUIRED="true" NUM_ROW="40"
+               NOT_SHOW_IF="READ_BINARY == 'true' AND USE_BYTE == 'true'">
 		<DEFAULT>false</DEFAULT>
 	</PARAMETER>
 
-  	<PARAMETER NAME="ADVANCED_SEPARATOR" FIELD="CHECK" REQUIRED="true" NUM_ROW="41" >
+  	<PARAMETER NAME="ADVANCED_SEPARATOR" FIELD="CHECK" REQUIRED="true" NUM_ROW="41"
+               NOT_SHOW_IF="READ_BINARY == 'true' AND USE_BYTE == 'true'" >
 		<DEFAULT>false</DEFAULT>
 	</PARAMETER>
 
@@ -221,6 +239,7 @@
       NAME="TRIMALL"
       FIELD="CHECK"
       NUM_ROW="50"
+      NOT_SHOW_IF="READ_BINARY == 'true' AND USE_BYTE == 'true'"
     >
       <DEFAULT>true</DEFAULT>
     </PARAMETER>
@@ -234,7 +253,7 @@
       FIELD="TABLE"
       NUM_ROW="60"
       NB_LINES="5"
-      SHOW_IF="TRIMALL=='false'"
+      NOT_SHOW_IF="TRIMALL=='true' OR (READ_BINARY == 'true' AND USE_BYTE == 'true')"
     >
       <ITEMS BASED_ON_SCHEMA="true">
         <ITEM NAME="TRIM" FIELD="CHECK">
