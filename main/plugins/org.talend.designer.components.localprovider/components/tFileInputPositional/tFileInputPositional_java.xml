@@ -78,6 +78,16 @@
     </PARAMETER>
 
     <PARAMETER
+      NAME="READ_BINARY"
+      FIELD="CHECK"
+      REQUIRED="true"
+      NUM_ROW="29"
+      SHOW_IF="USE_BYTE == 'true'" 
+    >
+      <DEFAULT>false</DEFAULT>
+    </PARAMETER>
+
+    <PARAMETER
       NAME="ADVANCED_OPTION"
       FIELD="CHECK"
       REQUIRED="true"
