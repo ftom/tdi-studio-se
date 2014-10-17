@@ -373,7 +373,8 @@ if ((metadatas != null) && (metadatas.size() > 0)) {
                 tool.thousandsSeparator=thousandsSeparator;
                 tool.decimalSeparator=decimalSeparator;
                 tool.cid=cid;
-                tool.isAppend = !useStream && isMerge;
+                boolean isAppend = !useStream && isMerge;
+                tool.isAppend = isAppend;
                 
                 // change tables to a tree 
 				Object[] treeObjs = getTree(rootTable, groupTable, loopTable, metadata.getListColumns());
@@ -387,7 +388,7 @@ if ((metadatas != null) && (metadatas.size() > 0)) {
                 XMLNode root = mainList.get(0);                
                 XMLNode loop = (XMLNode)treeObjs[2];
                 
-                if(!("true").equals(allowEmpty)){
+                if(!"true".equals(allowEmpty) && !(groupTable.size()>0 && isAppend)){
                 	removeEmptyElement(root);
                 }
                 
