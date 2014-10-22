@@ -42,8 +42,7 @@
 		<PARAMETER 
 			NAME="DB_VERSION" 
 			FIELD="CLOSED_LIST" 
-			NUM_ROW="6"
-			REPOSITORY_VALUE="VERSION">
+			NUM_ROW="6">
 			<ITEMS DEFAULT="SAP2">
 				<ITEM NAME="SAP2" VALUE="sapjco.jar" />
 				<ITEM NAME="SAP3" VALUE="sapjco3.jar" />
@@ -117,7 +116,33 @@
 	    >
 	    <DEFAULT>""</DEFAULT>
 	    </PARAMETER>
-	
+	    
+	    <PARAMETER NAME="SNC_ACTIVE" FIELD="CHECK" NUM_ROW="110" GROUP="SNC" REQUIRED="true">
+            <DEFAULT>false</DEFAULT>
+        </PARAMETER>
+        <PARAMETER NAME="SNC_PARTNER_NAME" FIELD="TEXT" NUM_ROW="120" GROUP="SNC" REQUIRED="true" SHOW_IF="SNC_ACTIVE=='true'">
+            <DEFAULT>"p:CN=ABC, O=MyCompany, C=US"</DEFAULT>
+        </PARAMETER>
+        <PARAMETER NAME="SNC_MY_NAME" FIELD="TEXT" NUM_ROW="130" GROUP="SNC" REQUIRED="false" SHOW_IF="SNC_ACTIVE=='true'">
+            <DEFAULT>"p:CN=AS Java, O=MyCompany, C=US"</DEFAULT>
+        </PARAMETER>
+        <PARAMETER NAME="SNC_LEVEL" FIELD="CLOSED_LIST" NUM_ROW="140" GROUP="SNC" REQUIRED="false" SHOW_IF="SNC_ACTIVE=='true'">
+            <ITEMS DEFAULT="3">
+                <ITEM NAME="1" VALUE="1" />
+                <ITEM NAME="2" VALUE="2" />
+                <ITEM NAME="3" VALUE="3" />
+                <ITEM NAME="4" VALUE="4" />
+                <ITEM NAME="5" VALUE="5" />
+                <ITEM NAME="6" VALUE="6" />
+                <ITEM NAME="7" VALUE="7" />
+                <ITEM NAME="8" VALUE="8" />
+                <ITEM NAME="9" VALUE="9" />
+            </ITEMS>
+        </PARAMETER>
+        <PARAMETER NAME="SNC_LIB_PATH" FIELD="FILE" NUM_ROW="150" GROUP="SNC" REQUIRED="false" SHOW_IF="SNC_ACTIVE=='true'">
+            <DEFAULT>"C:\\SAPNW_AS_Java\\SAPCryptolib\\sapcrypto.dll"</DEFAULT>
+        </PARAMETER>
+        
 	</PARAMETERS>
     <ADVANCED_PARAMETERS>
         <PARAMETER
