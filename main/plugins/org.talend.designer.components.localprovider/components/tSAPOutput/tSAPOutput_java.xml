@@ -156,10 +156,35 @@
 
   </PARAMETERS>
   <ADVANCED_PARAMETERS>
+    <PARAMETER NAME="SNC_ACTIVE" FIELD="CHECK" NUM_ROW="10" GROUP="SNC" REQUIRED="true" SHOW_IF="USE_EXISTING_CONNECTION=='false'">
+        <DEFAULT>false</DEFAULT>
+    </PARAMETER>
+    <PARAMETER NAME="SNC_PARTNER_NAME" FIELD="TEXT" NUM_ROW="20" GROUP="SNC" REQUIRED="true" SHOW_IF="(SNC_ACTIVE=='true') AND (USE_EXISTING_CONNECTION=='false')">
+        <DEFAULT>"p:CN=ABC, O=MyCompany, C=US"</DEFAULT>
+    </PARAMETER>
+    <PARAMETER NAME="SNC_MY_NAME" FIELD="TEXT" NUM_ROW="30" GROUP="SNC" REQUIRED="false" SHOW_IF="(SNC_ACTIVE=='true') AND (USE_EXISTING_CONNECTION=='false')">
+        <DEFAULT>"p:CN=AS Java, O=MyCompany, C=US"</DEFAULT>
+    </PARAMETER>
+    <PARAMETER NAME="SNC_LEVEL" FIELD="CLOSED_LIST" NUM_ROW="40" GROUP="SNC" REQUIRED="false" SHOW_IF="(SNC_ACTIVE=='true') AND (USE_EXISTING_CONNECTION=='false')">
+        <ITEMS DEFAULT="3">
+            <ITEM NAME="1" VALUE="1" />
+            <ITEM NAME="2" VALUE="2" />
+            <ITEM NAME="3" VALUE="3" />
+            <ITEM NAME="4" VALUE="4" />
+            <ITEM NAME="5" VALUE="5" />
+            <ITEM NAME="6" VALUE="6" />
+            <ITEM NAME="7" VALUE="7" />
+            <ITEM NAME="8" VALUE="8" />
+            <ITEM NAME="9" VALUE="9" />
+        </ITEMS>
+    </PARAMETER>
+    <PARAMETER NAME="SNC_LIB_PATH" FIELD="FILE" NUM_ROW="50" GROUP="SNC" REQUIRED="false" SHOW_IF="(SNC_ACTIVE=='true') AND (USE_EXISTING_CONNECTION=='false')">
+        <DEFAULT>"C:\\SAPNW_AS_Java\\SAPCryptolib\\sapcrypto.dll"</DEFAULT>
+    </PARAMETER>
     <PARAMETER
       NAME="FTP_HTTP_FUNCTION"
       FIELD="CHECK"
-      NUM_ROW="10"
+      NUM_ROW="60"
       SHOW_IF="USE_EXISTING_CONNECTION == 'false'"
     >
         <DEFAULT>false</DEFAULT>
@@ -167,7 +192,7 @@
   	<PARAMETER
       NAME="CLOSE"
       FIELD="CHECK"
-      NUM_ROW="20"
+      NUM_ROW="70"
     >
     <DEFAULT>true</DEFAULT>
     </PARAMETER>
