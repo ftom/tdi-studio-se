@@ -147,6 +147,14 @@
 	}
 	
     String passwordFieldName = "__PASSWORD__";
+    
+    boolean activeSNC = ("true").equals(ElementParameterParser.getValue(node,"__SNC_ACTIVE__"));
+    String partnerSNCName = ElementParameterParser.getValue(node,"__SNC_PARTNER_NAME__");
+    String mySNCName = ElementParameterParser.getValue(node,"__SNC_MY_NAME__");
+    String sncLevel = ElementParameterParser.getValue(node,"__SNC_LEVEL__");
+    String sncLibPath = ElementParameterParser.getValue(node,"__SNC_LIB_PATH__");
+    boolean hasSNCLibPath = sncLibPath != null && !"".equals(sncLibPath);
+    boolean hasMySNCName = mySNCName != null && !"".equals(mySNCName);    
 	%>
     
 	<%@ include file="@{org.talend.designer.components.localprovider}/components/templates/password.javajet"%>
@@ -157,25 +165,48 @@
 			client_<%=cid %> = (com.sap.mw.jco.JCO.Client)globalMap.get("conn_<%=connection %>");	
 		<%}else{%>
 		<%//big try%>
+		java.util.Properties properties_<%=cid%> = new java.util.Properties();
 		try{
 			<%if("ApplicationServer".equals(serverType)){%>
 				//Create a client connection to a dedicated R/3 system
-				client_<%=cid %> = com.sap.mw.jco.JCO.createClient( <%=client %>,      // SAP client
-							            				 <%=userid %>,   	// userid
-							            				 decryptedPassword_<%=cid%>,    // password
-							            				 <%=language %>,    // language
-							            				 <%=hostname %>,    // host name
-							            				 <%=systemnumber %> );      // system number
+				properties_<%=cid%>.put("jco.client.type", "3");
+        		if (<%=client %> != null) properties_<%=cid%>.put("jco.client.client", <%=client %>);
+        		if (<%=userid %> != null) properties_<%=cid%>.put("jco.client.user", <%=userid %>);
+        		if (decryptedPassword_<%=cid%> != null) properties_<%=cid%>.put("jco.client.passwd", decryptedPassword_<%=cid%>);
+        		if (<%=language %> != null) properties_<%=cid%>.put("jco.client.lang", <%=language %>);
+        		if (<%=hostname %> != null) properties_<%=cid%>.put("jco.client.ashost", <%=hostname %>);
+        		if (<%=systemnumber %> != null) properties_<%=cid%>.put("jco.client.sysnr", <%=systemnumber %>);	
 			<%}else{%>
 				//Create a client connection to Message Server 
-				client_<%=cid %> = com.sap.mw.jco.JCO.createClient( <%=client %>,      // SAP client
-					            				 <%=userid %>,   	// userid
-					            				 decryptedPassword_<%=cid%>,    // password
-					            				 <%=language %>,    // language
-					            				 <%=hostname %>,    // host name
-					            				 <%=systemId %>,    // system ID,defined in sapmsg.ini
-					            				 <%=groupName%> );  // group name    
+				properties_<%=cid%>.put("jco.client.type", "3");
+                if (<%=client %> != null) properties_<%=cid%>.put("jco.client.client", <%=client %>);
+        		if (<%=userid %> != null) properties_<%=cid%>.put("jco.client.user", <%=userid %>);
+        		if (decryptedPassword_<%=cid%> != null) properties_<%=cid%>.put("jco.client.passwd", decryptedPassword_<%=cid%>);
+        		if (<%=language %> != null) properties_<%=cid%>.put("jco.client.lang", <%=language %>);
+        		if (<%=hostname %> != null) properties_<%=cid%>.put("jco.client.mshost", <%=hostname %>);
+        		if (<%=systemId %> != null) properties_<%=cid%>.put("jco.client.r3name", <%=systemId %>);
+        		if (<%=groupName%> != null) properties_<%=cid%>.put("jco.client.group", <%=groupName%>);
 			<%}%>
+			<%
+        	if(activeSNC){
+        	%>
+        		properties_<%=cid%>.setProperty("jco.client.snc_mode", "1");
+        		properties_<%=cid%>.setProperty("jco.client.snc_partnername", <%=partnerSNCName%>);
+        		properties_<%=cid%>.setProperty("jco.client.snc_qop", String.valueOf(<%=sncLevel%>));
+        		<%if(hasMySNCName){%>
+            		if(<%=mySNCName%> != null){
+            			properties_<%=cid%>.setProperty("jco.client.snc_myname", <%=mySNCName%>);
+            		}
+        		<%}%>
+        		<%if(hasSNCLibPath){%>
+            		if(<%=sncLibPath%> != null){
+            			properties_<%=cid%>.setProperty("jco.client.snc_lib", <%=sncLibPath%>);
+            		}
+        		<%}%>
+        	<%
+        	}
+        	%>
+        	client_<%=cid %> = com.sap.mw.jco.JCO.createClient(properties_<%=cid%>);
 			// Open the connection
 			client_<%=cid %>.connect();
 			<%if(useFtpHttp){%>
@@ -243,6 +274,28 @@
 			}
 %>
 					org.talend.sap.TSAPDestinationData destinationData_<%=cid%> = null;
+					
+					java.util.Properties properties_<%=cid%> = new java.util.Properties();
+        			<%
+                	if(activeSNC){
+                	%>
+                		properties_<%=cid%>.setProperty("jco.client.snc_mode", "1");
+                		properties_<%=cid%>.setProperty("jco.client.snc_partnername", <%=partnerSNCName%>);
+                		properties_<%=cid%>.setProperty("jco.client.snc_qop", String.valueOf(<%=sncLevel%>));
+                		<%if(hasMySNCName){%>
+                    		if(<%=mySNCName%> != null){
+                    			properties_<%=cid%>.setProperty("jco.client.snc_myname", <%=mySNCName%>);
+                    		}
+                		<%}%>
+                		<%if(hasSNCLibPath){%>
+                    		if(<%=sncLibPath%> != null){
+                    			properties_<%=cid%>.setProperty("jco.client.snc_lib", <%=sncLibPath%>);
+                    		}
+                		<%}%>
+                	<%
+                	}
+                	%>
+					
         			<%if("ApplicationServer".equals(serverType)){%>
         				destinationData_<%=cid%> = new org.talend.sap.TSAPApplicationServerDestData.Builder(<%=client%>,
         																					<%=userid%>,
@@ -252,6 +305,9 @@
         																					<%=systemnumber%>)
             																				<%if(useFtpHttp){%>
             																					.setSAPGUI("2")
+            																				<%}%>
+            																				<%if(activeSNC){%>
+            																					.setCustomProp(properties_<%=cid%>)
             																				<%}%>
         																					.build();
         			<%}else{%>			
@@ -264,6 +320,9 @@
         						            				 								<%=groupName%>)
         						            				 								<%if(useFtpHttp){%>
             																					.setSAPGUI("2")
+            																				<%}%>
+            																				<%if(activeSNC){%>
+            																					.setCustomProp(properties_<%=cid%>)
             																				<%}%>
             																				.build();
         			<%}%>
