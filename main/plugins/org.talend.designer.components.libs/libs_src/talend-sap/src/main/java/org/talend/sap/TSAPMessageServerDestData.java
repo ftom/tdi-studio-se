@@ -37,6 +37,8 @@ public class TSAPMessageServerDestData implements TSAPDestinationData {
     private final String groupName;
 
     private final String sapGUI;
+    
+    private final Properties customProp;
 
     private TSAPMessageServerDestData() throws Exception {
         throw new Exception("should use builder to init"); //$NON-NLS-1$
@@ -51,6 +53,7 @@ public class TSAPMessageServerDestData implements TSAPDestinationData {
         this.systemID = builder.systemID;
         this.groupName = builder.groupName;
         this.sapGUI = builder.sapGUI;
+        this.customProp = builder.customProp;
     }
 
     /*
@@ -72,6 +75,9 @@ public class TSAPMessageServerDestData implements TSAPDestinationData {
         if (sapGUI != null) {
             properties.setProperty(DestinationDataProvider.JCO_USE_SAPGUI, sapGUI);
         }
+        if (customProp != null) {
+            properties.putAll(customProp);
+        }
         return properties;
     }
 
@@ -92,6 +98,8 @@ public class TSAPMessageServerDestData implements TSAPDestinationData {
         private final String groupName;
 
         private String sapGUI = null;
+        
+        private Properties customProp = null;
 
         public Builder(String client, String user, String password, String language, String host, String systemID,
                 String groupName) {
@@ -106,6 +114,11 @@ public class TSAPMessageServerDestData implements TSAPDestinationData {
 
         public Builder setSAPGUI(String sapGUI) {
             this.sapGUI = sapGUI;
+            return this;
+        }
+        
+        public Builder setCustomProp(Properties customProp){
+            this.customProp = customProp;
             return this;
         }
 

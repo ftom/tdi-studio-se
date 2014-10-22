@@ -36,6 +36,8 @@ public class TSAPApplicationServerDestData implements TSAPDestinationData {
 
     private final String sapGUI;
 
+    private final Properties customProp;
+
     private TSAPApplicationServerDestData() throws Exception {
         throw new Exception("should use builder to init"); //$NON-NLS-1$
     }
@@ -48,6 +50,7 @@ public class TSAPApplicationServerDestData implements TSAPDestinationData {
         this.host = builder.host;
         this.systemNumber = builder.systemNumber;
         this.sapGUI = builder.sapGUI;
+        this.customProp = builder.customProp;
     }
 
     /*
@@ -66,6 +69,9 @@ public class TSAPApplicationServerDestData implements TSAPDestinationData {
         properties.setProperty(DestinationDataProvider.JCO_SYSNR, systemNumber);
         if (sapGUI != null) {
             properties.setProperty(DestinationDataProvider.JCO_USE_SAPGUI, sapGUI);
+        }
+        if (customProp != null) {
+            properties.putAll(customProp);
         }
         return properties;
     }
@@ -86,6 +92,8 @@ public class TSAPApplicationServerDestData implements TSAPDestinationData {
 
         private String sapGUI = null;
 
+        private Properties customProp = null;
+
         public Builder(String client, String user, String password, String language, String host, String systemNumber) {
             this.client = client;
             this.user = user;
@@ -97,6 +105,11 @@ public class TSAPApplicationServerDestData implements TSAPDestinationData {
 
         public Builder setSAPGUI(String sapGUI) {
             this.sapGUI = sapGUI;
+            return this;
+        }
+
+        public Builder setCustomProp(Properties customProp) {
+            this.customProp = customProp;
             return this;
         }
 
