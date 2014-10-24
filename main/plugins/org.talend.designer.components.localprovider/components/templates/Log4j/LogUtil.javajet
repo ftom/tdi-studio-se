@@ -13,6 +13,7 @@ class BasicLogUtil{
 		this.node = node;
 		this.cid = this.node.getUniqueName();
 		this.log4jEnabled = ("true").equals(org.talend.core.model.process.ElementParameterParser.getValue(this.node.getProcess(), "__LOG4J_ACTIVATE__"));
+		this.log4jEnabled = this.log4jEnabled && !"JOBLET".equals(node.getComponent().getComponentType().toString());
 		this.logID = this.cid;
 	}
 	
