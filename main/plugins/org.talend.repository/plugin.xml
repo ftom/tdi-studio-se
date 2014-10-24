@@ -2295,6 +2295,14 @@
               name="SetDieOnErrorFalse4tSCPDelete"
               version="5.6.0">
         </projecttask>
+        <projecttask
+              beforeLogon="false"
+              breaks="5.6"
+              class="org.talend.repository.model.migration.RemoveUnuseQuoteOnTLoop"
+              id="org.talend.repository.model.migration.RemoveUnuseQuoteOnTLoop"
+              name="RemoveUnuseQuoteOnTLoop"
+              version="5.6">
+        </projecttask>
    </extension>
 
    <extension

@@ -51,24 +51,14 @@ globalMap.put("<%=cid%>_CURRENT_ITERATION",current_iteration_<%=cid%>);
 }else{// While type
 
 String condition = ElementParameterParser.getValue(node, "__CONDITION__");
-if (condition.startsWith("\"") && condition.endsWith("\"")) {
-    condition = condition.substring(1, condition.length()-1);
-}
-
 String declaration = ElementParameterParser.getValue(node, "__DECLARATION__");
-if (declaration.startsWith("\"") && declaration.endsWith("\"")) {
-    declaration = declaration.substring(1, declaration.length()-1);
-}
-
-
 
 %>
 
 <%=declaration%>;
 	<%if(isLog4jEnabled){
-		String cdn = ElementParameterParser.getValue(node, "__CONDITION__");
-		%>
-		log.info("<%=cid%> - Start to loop using a while loop. Initial declaration: '" + "<%=declaration%>" + "'. Condition: '" + <%=cdn%> + "'.");
+	%>
+		log.info("<%=cid%> - Start to loop using a while loop. Initial declaration: '" + <%=org.talend.core.model.utils.NodeUtil.getNormalizeParameterValue(node, "DECLARATION")%> + "'. Condition: '" + <%=org.talend.core.model.utils.NodeUtil.getNormalizeParameterValue(node, "CONDITION")%> + "'.");
 	<%}%>
 while(<%=condition%>){
 	<%if(isLog4jEnabled){%>

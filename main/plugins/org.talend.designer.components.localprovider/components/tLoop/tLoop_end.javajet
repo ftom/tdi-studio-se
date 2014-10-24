@@ -23,11 +23,6 @@ if (forLoop) {
 }else{// While type
 
 String iteration   = ElementParameterParser.getValue(node, "__ITERATION__");
-//iteration = iteration.substring(1,iteration.length()-1);
-if (iteration.startsWith("\"") && iteration.endsWith("\"")) {
-    iteration = iteration.substring(1, iteration.length()-1);
-}
-
 %>
 
 
