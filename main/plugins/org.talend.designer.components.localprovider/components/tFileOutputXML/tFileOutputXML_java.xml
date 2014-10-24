@@ -76,7 +76,7 @@
 				<ITEM NAME="AS_ATTRIBUTE" FIELD="CHECK" />
 				<ITEM NAME="SCHEMA_COLUMN_NAME" FIELD="CHECK"
 					VALUE="true" />
-				<ITEM NAME="LABEL" VALUE="&quot;label&quot;" RAW="true" />
+				<ITEM NAME="LABEL" VALUE="&quot;label&quot;"/>
 			</ITEMS>
 		</PARAMETER>
 
