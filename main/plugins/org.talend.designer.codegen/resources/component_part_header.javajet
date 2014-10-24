@@ -199,7 +199,7 @@
 		if(!(node.isVirtualGenerateNode() && node.getVirtualLinkTo()==null)){//ignore the connector in virtual component
     		for(IConnection con:connSetForLog){
     		%>
-    			log.trace("<%=con.getUniqueName()%> - " + <%=con.getUniqueName()%>.toLogString());
+    			log.trace("<%=con.getUniqueName()%> - " + <%=con.getName()%>.toLogString());
     		<%
     		}
     	}
