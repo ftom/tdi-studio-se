@@ -455,6 +455,9 @@ public final class Expression {
                         if (currentParam == null) {
                             continue;
                         }
+                        if (tableValues.size() <= currentParam.getCurrentRow()) {
+                            break;
+                        }
                         Map<String, Object> currentRow = tableValues.get(currentParam.getCurrentRow());
                         if (currentRow.containsKey(varNames[1])) {
                             for (Object curObj : param.getListItemsValue()) {
