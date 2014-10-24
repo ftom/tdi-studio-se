@@ -1459,6 +1459,7 @@ if(!isVirtualOut) { // T_TM_M_320
         int curCount = 0;
         for (int indexCurrentTable = 0; indexCurrentTable < lstSizeOutputs; indexCurrentTable++) {
             ExternalMapperTable outputTable = (ExternalMapperTable) outputTablesSortedByReject.get(indexCurrentTable);
+            String joinedTableName = outputTable.getIsJoinTableOf();
             List<ExternalMapperTableEntry> outputTableEntries = outputTable.getMetadataTableEntries();
             String outputTableName = outputTable.getName();
             
@@ -1587,7 +1588,7 @@ if(!isVirtualOut) { // T_TM_M_320
 											
 	                if (outputTableEntries != null && (!currentIsReject && !currentIsRejectInnerJoin || currentIsReject || currentIsRejectInnerJoin
 	                        && atLeastOneInputTableWithInnerJoin || checkingSyntax)) {
-						if(isLog4jEnabled){
+						if(joinedTableName==null && isLog4jEnabled){
 							sb.append(cr + "count_" + outputTableName + "_" + componentNameForKeyProblem + "++;" + cr);
 						}
 						boolean needAppendColumnLog = true;
@@ -1665,7 +1666,7 @@ if(!isVirtualOut) { // T_TM_M_320
 	                        }
 							
 							if(isLog4jEnabled){
-									sb.append(cr + "log.debug(\"" + componentNameForKeyProblem + " - Outputting the record \" + count_" + outputTableName + "_" + componentNameForKeyProblem + " + \" of the output table '" + outputTableName + "'.\");" + cr);
+									sb.append(cr + "log.debug(\"" + componentNameForKeyProblem + " - Outputting the record \" + count_" + (joinedTableName!=null?joinedTableName:outputTableName) + "_" + componentNameForKeyProblem + " + \" of the output table '" + outputTableName + "'.\");" + cr);
 							}
 	                        
 	                        if (trace) { // only for traces to be able to use preview mode in tMap.
