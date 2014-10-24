@@ -149,7 +149,7 @@ class LogUtil extends BasicLogUtil{
        			}else{
        				String value = org.talend.core.model.utils.NodeUtil.getNormalizeParameterValue(node, ep);
        				%>
-    				<%=var("log4jParamters")%>.append("<%=name%> = ").append(<%=value%>);
+    				<%=var("log4jParamters")%>.append("<%=name%>" + " = " + routines.TalendString.unionString(",",<%=value%>));
     			<%
     			}	
     			%>
