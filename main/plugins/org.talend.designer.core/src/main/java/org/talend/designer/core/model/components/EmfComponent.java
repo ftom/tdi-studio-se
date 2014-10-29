@@ -3910,4 +3910,22 @@ public class EmfComponent extends AbstractComponent {
         }
         return true;
     }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.talend.core.model.components.IComponent#isLog4JEnabled()
+     */
+    @Override
+    public boolean isLog4JEnabled() {
+        if (compType == null) {
+            isLoaded = false;
+            try {
+                load();
+            } catch (BusinessException e) {
+                ExceptionHandler.process(e);
+            }
+        }
+        return compType.getHEADER().isLOG4J_ENABLED();
+    }
 }
