@@ -273,13 +273,13 @@ public <%=JavaTypesManager.getTypeToGenerate(ctxParam.getType(),true)%> get<%=Ch
 	private String currentComponent = "";
 	<%
 	//tParallelize will wrap globalMap with synchronizedMap
-	if(!isRunInMultiThread){
-	%>
-		private final java.util.Map<String, Object> globalMap = new java.util.HashMap<String, Object>();
-	<%
-	}else{
+	if(isRunInMultiThread || NodeUtil.containsMultiThreadComponent(process)){
 	%>
 		private final java.util.Map<String, Object> globalMap = java.util.Collections.synchronizedMap(new java.util.HashMap<String, Object>());
+	<%
+	} else {
+	%>
+		private final java.util.Map<String, Object> globalMap = new java.util.HashMap<String, Object>();
 	<%
 	}
 	boolean exist_tParallelize = false;
