@@ -11,6 +11,7 @@
 			STATUS="ALPHA" 
 			VERSION="0.102"
 			PARTITIONING="AUTO"
+			LOG4J_ENABLED="true"
 			> 
 		<SIGNATURE/> 
 	</HEADER>

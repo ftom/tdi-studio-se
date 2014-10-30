@@ -13,6 +13,7 @@
     DATA_AUTO_PROPAGATE="false"
     HAS_CONDITIONAL_OUTPUTS="true"
     TECHNICAL="true"
+    LOG4J_ENABLED="true"
   >
     <SIGNATURE />
   </HEADER>

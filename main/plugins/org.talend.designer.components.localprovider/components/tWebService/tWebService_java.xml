@@ -11,7 +11,8 @@
 			DATA_AUTO_PROPAGATE="false"
 			IS_MULTIPLYING_OUTPUTS="true"
 			EXTENSION="org.talend.designer.webservice"
-			PARTITIONING="AUTO">
+			PARTITIONING="AUTO"
+			LOG4J_ENABLED="true">
 		<SIGNATURE />
 	</HEADER>
 

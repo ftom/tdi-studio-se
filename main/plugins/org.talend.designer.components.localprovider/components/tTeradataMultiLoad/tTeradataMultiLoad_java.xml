@@ -10,6 +10,7 @@
     RELEASE_DATE="20070323A"
     STARTABLE="true"
     DATA_AUTO_PROPAGATE="false"
+    LOG4J_ENABLED="true"
   >
     <SIGNATURE/>
   </HEADER>

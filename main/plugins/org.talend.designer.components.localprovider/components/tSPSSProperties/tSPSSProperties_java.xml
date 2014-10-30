@@ -11,7 +11,8 @@
     RELEASE_DATE="20081001A"
     STARTABLE="true"
     DATA_AUTO_PROPAGATE="false"
-    SCHEMA_AUTO_PROPAGATE="false" 
+    SCHEMA_AUTO_PROPAGATE="false"
+    LOG4J_ENABLED="true"
   >
     <SIGNATURE/>
   </HEADER>

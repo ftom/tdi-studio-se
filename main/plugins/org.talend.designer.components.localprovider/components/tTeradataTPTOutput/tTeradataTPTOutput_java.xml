@@ -11,7 +11,8 @@
     STARTABLE="false"
     VISIBLE="false"
     TECHNICAL="true"
-	PARTITIONING="NONE"
+    PARTITIONING="NONE"
+    LOG4J_ENABLED="true"
   >
     <SIGNATURE></SIGNATURE>
   </HEADER>
