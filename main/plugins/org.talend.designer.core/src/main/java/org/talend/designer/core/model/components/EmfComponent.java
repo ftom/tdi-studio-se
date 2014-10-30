@@ -1655,6 +1655,7 @@ public class EmfComponent extends AbstractComponent {
                 param.setMaxLength(xmlParam.getMAXLENGTH());
             }
             param.setRaw(xmlParam.isRAW());
+            param.setLog4JEnabled(xmlParam.isLOG4J_ENABLED());
             switch (type) {
             case COLOR:
                 param.setValue(DEFAULT_COLOR);
