@@ -9,6 +9,7 @@ COMPATIBILITY="ALL"
        AUTHOR="Talend"
  RELEASE_DATE="2010012"
     STARTABLE="true"
+    LOG4J_ENABLED="true"
   >
     <SIGNATURE></SIGNATURE>
   </HEADER>

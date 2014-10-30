@@ -10,6 +10,7 @@
     AUTHOR="EXASOL"
     RELEASE_DATE="20081201A"
     STARTABLE="true"
+    LOG4J_ENABLED="true"
   >
     <SIGNATURE/>
   </HEADER>

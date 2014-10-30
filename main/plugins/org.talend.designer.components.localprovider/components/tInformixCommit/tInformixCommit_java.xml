@@ -9,7 +9,8 @@
     AUTHOR="Talend"
     RELEASE_DATE="20091105A"
     STARTABLE="true"
-	PARTITIONING="NONE"
+    PARTITIONING="NONE"
+    LOG4J_ENABLED="true"
   >
     <SIGNATURE/>
   </HEADER>
