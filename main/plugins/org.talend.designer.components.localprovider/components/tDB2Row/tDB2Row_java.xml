@@ -147,6 +147,7 @@
       NAME="TABLE"
       FIELD="DBTABLE"
       NUM_ROW="30"
+      LOG4J_ENABLED="false"
     >
       <DEFAULT>""</DEFAULT>
     </PARAMETER>

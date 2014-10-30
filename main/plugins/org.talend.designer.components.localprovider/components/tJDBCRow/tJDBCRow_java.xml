@@ -145,7 +145,8 @@
 	<PARAMETER  
 		NAME="TABLE"  
 		FIELD="DBTABLE"  
-		NUM_ROW="40"  
+		NUM_ROW="40"
+    LOG4J_ENABLED="false"
 		>  
 		<DEFAULT>""</DEFAULT>  
 	</PARAMETER>  
