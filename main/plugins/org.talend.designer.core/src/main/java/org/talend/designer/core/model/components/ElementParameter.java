@@ -105,6 +105,8 @@ public class ElementParameter implements IElementParameter {
 
     private boolean raw;
 
+    private boolean enable = true;
+
     private List<IElementParameterDefaultValue> defaultValues = new ArrayList<IElementParameterDefaultValue>();
 
     private String filter = null;
@@ -1213,6 +1215,26 @@ public class ElementParameter implements IElementParameter {
     @Override
     public void setRaw(boolean raw) {
         this.raw = raw;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.talend.core.model.process.IElementParameter#isLog4JEnabled()
+     */
+    @Override
+    public boolean isLog4JEnabled() {
+        return this.enable;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.talend.core.model.process.IElementParameter#setLog4JEnabled(boolean)
+     */
+    @Override
+    public void setLog4JEnabled(boolean enable) {
+        this.enable = enable;
     }
 
 }

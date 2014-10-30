@@ -678,4 +678,9 @@ public class JobContextLoadComponent implements IComponent {
     public Map<String, ImageDescriptor> getImageRegistry() {
         return null;
     }
+
+    @Override
+    public boolean isLog4JEnabled() {
+        return false;
+    }
 }

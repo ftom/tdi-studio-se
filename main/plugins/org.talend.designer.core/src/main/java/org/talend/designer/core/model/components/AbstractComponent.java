@@ -115,4 +115,9 @@ public abstract class AbstractComponent implements IComponent {
         return null;
     }
 
+    @Override
+    public boolean isLog4JEnabled() {
+        return false;
+    }
+
 }

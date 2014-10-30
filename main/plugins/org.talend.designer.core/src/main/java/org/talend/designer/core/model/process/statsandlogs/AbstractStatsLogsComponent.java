@@ -599,4 +599,9 @@ public abstract class AbstractStatsLogsComponent implements IComponent {
         return null;
     }
 
+    @Override
+    public boolean isLog4JEnabled() {
+        return false;
+    }
+
 }
