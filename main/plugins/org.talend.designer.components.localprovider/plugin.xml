@@ -750,6 +750,9 @@
 	             id="slf4j-log4j12-1.7.5.jar">
 	         </library>
 	         <library
+	             id="log4j-1.2.17.jar">
+	         </library>
+	         <library
 	             id="jersey-core-1.9.jar">
 	         </library>
 	    </libraryNeededGroup>
@@ -778,6 +781,9 @@
 	         </library>
 	         <library
 	             id="protobuf-java-2.5.0.jar">
+	         </library>
+	         <library
+	             id="log4j-1.2.17.jar">
 	         </library>
 	         <library
 	             id="slf4j-api-1.7.5.jar">
