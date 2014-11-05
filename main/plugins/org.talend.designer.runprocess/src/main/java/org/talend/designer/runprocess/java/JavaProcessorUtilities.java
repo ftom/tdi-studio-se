@@ -451,7 +451,6 @@ public class JavaProcessorUtilities {
         // list contains all routines linked to job as well as routines not used in the job
         // rebuild the list to have only the libs linked to routines "not used".
         optionalJarsOnlyForRoutines.removeAll(listModulesReallyNeeded);
-
         // at this point, the Set for optional jars really only contains optional jars for routines
         // only to be able to compile java project without error.
         for (String jar : optionalJarsOnlyForRoutines) {
@@ -463,7 +462,9 @@ public class JavaProcessorUtilities {
         File libDir = getJavaProjectLibFolder();
         if ((libDir != null) && (libDir.isDirectory())) {
             Set<String> jarsNeedRetrieve = new HashSet<String>(listModulesReallyNeeded);
+            ILibraryManagerService repositoryBundleService = CorePlugin.getDefault().getRepositoryBundleService();
             for (File externalLib : libDir.listFiles(FilesUtils.getAcceptJARFilesFilter())) {
+                repositoryBundleService.refreshDependencyJar(externalLib);
                 jarsNeedRetrieve.remove(externalLib.getName());
             }
             List<IClasspathEntry> entriesToRemove = new ArrayList<IClasspathEntry>();
@@ -514,7 +515,7 @@ public class JavaProcessorUtilities {
                     }
                 }
                 jarsNeedRetrieve.addAll(originalConexts);
-                ILibraryManagerService repositoryBundleService = CorePlugin.getDefault().getRepositoryBundleService();
+
                 repositoryBundleService.retrieve(jarsNeedRetrieve, libDir.getAbsolutePath());
                 if (process instanceof IProcess2) {
                     ((IProcess2) process).checkProcess();
