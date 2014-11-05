@@ -456,7 +456,7 @@ if(("false").equals(ElementParameterParser.getValue(node,"__CSV_OPTION__"))) {
 						synchronized (multiThreadLockWrite) {
 					<%
 					}
-						if (codeGenArgument.subTreeContainsParallelIterate()) {
+						if (NodeUtil.subBranchContainsParallelIterate(node)) {
 						%>
 							synchronized (lockWrite) {
 			       	 	<% 
@@ -507,7 +507,7 @@ if(("false").equals(ElementParameterParser.getValue(node,"__CSV_OPTION__"))) {
 								} 
 				       		<%
 				        	}
-						if (codeGenArgument.subTreeContainsParallelIterate()) {
+						if (NodeUtil.subBranchContainsParallelIterate(node)) {
 						%>
 							} 
 				        <%
@@ -879,7 +879,7 @@ if(("false").equals(ElementParameterParser.getValue(node,"__CSV_OPTION__"))) {
 						synchronized (multiThreadLockWrite) {
 					<%
 					}
-					if (codeGenArgument.subTreeContainsParallelIterate()) {
+					if (NodeUtil.subBranchContainsParallelIterate(node)) {
 					%>
 						synchronized (lockWrite) {
 			        <% 
@@ -930,7 +930,7 @@ if(("false").equals(ElementParameterParser.getValue(node,"__CSV_OPTION__"))) {
 						} 
 	        		<%
 	        		}
-					if (codeGenArgument.subTreeContainsParallelIterate()) {
+					if (NodeUtil.subBranchContainsParallelIterate(node)) {
 					%>
 						} 
 	        		<%
