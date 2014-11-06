@@ -1,0 +1,53 @@
+<% if(useByte){ %>
+	  final class ByteBufferUtils_<%= cid %>{
+	   		 private final java.util.Map<String,Integer>  javaTypeMapping = new java.util.Hashtable<String,Integer>();
+	   		 private final List<String> supportedTypeList = java.util.Arrays.asList("char","double","float","int","long","short","byte");
+
+	   		    private ByteBufferUtils_<%= cid %>(){
+	   		    	javaTypeMapping.put("unsupported",-1);
+	   		        javaTypeMapping.put("char",0);
+	   		        javaTypeMapping.put("double",1);
+	   		        javaTypeMapping.put("float",2);
+	   		        javaTypeMapping.put("int",3);
+	   		        javaTypeMapping.put("long",4);
+	   		        javaTypeMapping.put("short",5);
+	   		        javaTypeMapping.put("byte",6);
+	   		    }
+
+	   		    public Object convertByteBuffer2Obj(byte[] bytArr,String simpleClazzName){
+	   		    	    int typeIntValue = javaTypeMapping.get(simpleClazzName);
+	   		    	    java.nio.ByteBuffer byteBuffer = java.nio.ByteBuffer.wrap(bytArr);
+	   		    	    Object result = null;
+	   		    	    switch(typeIntValue){
+	   		    	    	case 0:
+	   		    	    		 result = Character.valueOf(byteBuffer.getChar());
+	   		    	    		 break;
+	   			    		case 1:
+	   			    			 result = Double.valueOf(byteBuffer.getDouble());
+	   			    			 break;
+	   					 	case 2:
+	   					 		 result = Float.valueOf(byteBuffer.getFloat());
+	   					 		 break;
+	   				 	 	case 3:
+	   				 	 		 result = Integer.valueOf(byteBuffer.getInt());
+	   				 	 		 break;
+	   			 	 	 	case 4:
+	   			 	 	 		 result = Long.valueOf(byteBuffer.getLong());
+	   			 	 	 		 break;
+	   		 	 		    case 5:
+	   		 	 		    	 result = Short.valueOf(byteBuffer.getShort());
+	   		 	 		    	 break;
+	   		 	 		    case 6:
+	   		 	 		    	 result = Byte.valueOf(byteBuffer.get());
+	   		 	 		    	 break;
+	   			    	    case -1:
+	   			    	    	 throw new RuntimeException("Unsupported data type for reading from binary file.");
+	   		    	    }
+	   		    	    return result;
+	   		    }
+
+	   		    public boolean dataTypeSupported(String dataType){
+	   		    	   return supportedTypeList.contains(dataType);
+	   		    }
+	   }
+<% } %>

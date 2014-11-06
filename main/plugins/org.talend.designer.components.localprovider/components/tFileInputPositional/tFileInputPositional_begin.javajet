@@ -119,6 +119,9 @@
 			<%
 			}
 			%>
+
+			<%@ include file="./ByteBufferUtils.javajet"%>
+
             int nb_line_<%=cid%> = 0;
             int footer_<%=cid %>  = <%=footer%>;
             int nb_limit_<%=cid %> = <%=limit%>;
@@ -302,9 +305,20 @@
 												<%=firstConnName %>.<%=column.getLabel() %> = column_<%=cid %>.getBytes(<%=encoding%>);
 											<%
 											} else {
-											%>
-												<%=firstConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_<%= typeToGenerate %>(column_<%=cid %>);
-											<%
+												   if(useByte){
+												   		 %>
+												   		 		ByteBufferUtils_<%= cid %> bytBufUtils_<%= cid %> = new ByteBufferUtils_<%= cid %>();
+													   		   if(bytBufUtils_<%= cid %>.dataTypeSupported("<%= javaType.getPrimitiveClass().getSimpleName() %>")){
+													   		          <%=firstConnName %>.<%=column.getLabel() %> = (<%= typeToGenerate %>)bytBufUtils_<%= cid %>.convertByteBuffer2Obj(column_<%=cid %>.getBytes(<%= encoding %>),"<%= javaType.getPrimitiveClass().getSimpleName() %>");
+													   		   }else{
+													   		          <%=firstConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_<%= typeToGenerate %>(column_<%=cid %>);
+													   		   }
+												   		 <%
+												   }else{
+												   		 %>
+												   		 	<%=firstConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_<%= typeToGenerate %>(column_<%=cid %>);
+												   		 <%
+												   }
 											}
 											%>
     									}else{
@@ -481,9 +495,20 @@
 		                        				<%=firstConnName %>.<%=column.getLabel() %> = columnValue<%=cid %>[<%=valueN%>].getBytes(<%=encoding%>);
 											<%
 											} else {
-											%>	
-		                        				<%=firstConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_<%= typeToGenerate %>(columnValue<%=cid %>[<%=valueN%>].trim());
-											<%
+												   if(useByte){
+												   		 %>
+												   		 		ByteBufferUtils_<%= cid %> bytBufUtils_<%= cid %> = new ByteBufferUtils_<%= cid %>();
+													   		   if(bytBufUtils_<%= cid %>.dataTypeSupported("<%= javaType.getPrimitiveClass().getSimpleName() %>")){
+													   		          <%=firstConnName %>.<%=column.getLabel() %> = (<%= typeToGenerate %>)bytBufUtils_<%= cid %>.convertByteBuffer2Obj(columnValue<%=cid %>[<%=valueN%>].getBytes(<%= encoding %>),"<%= javaType.getPrimitiveClass().getSimpleName() %>");
+													   		   }else{
+													   		          <%=firstConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_<%= typeToGenerate %>(columnValue<%=cid %>[<%=valueN%>].trim());
+													   		   }
+												   		 <%
+												   }else{
+														   %>
+														      <%=firstConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_<%= typeToGenerate %>(columnValue<%=cid %>[<%=valueN%>].trim());
+														   <%
+												   }
 											}
 											%>
                         				}else{
