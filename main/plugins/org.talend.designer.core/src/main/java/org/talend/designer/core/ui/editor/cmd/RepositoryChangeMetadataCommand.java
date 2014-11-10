@@ -20,6 +20,7 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 import org.talend.commons.xml.XmlUtil;
 import org.talend.core.model.metadata.ColumnNameChanged;
+import org.talend.core.model.metadata.IMetadataColumn;
 import org.talend.core.model.metadata.IMetadataTable;
 import org.talend.core.model.metadata.MetadataToolHelper;
 import org.talend.core.model.metadata.builder.connection.Connection;
@@ -67,7 +68,9 @@ public class RepositoryChangeMetadataCommand extends ChangeMetadataCommand {
 
     private final Connection connection;
 
-    private String[] xmlComponent = new String[] { "tFileInputXML", "tExtractXMLField", "tInGESTCoreXMLInput" };
+    private String[] xmlComponent = new String[] { "tFileInputXML", "tExtractXMLField", "tInGESTCoreXMLInput" };//$NON-NLS-1$//$NON-NLS-2$//$NON-NLS-3$
+
+    private String[] oracleCdcComponent = new String[] { "tOracleCDC", "tOracleCDCOutput" };//$NON-NLS-1$//$NON-NLS-2$
 
     public RepositoryChangeMetadataCommand(Node node, String propName, Object propValue, IMetadataTable newOutputMetadata,
             String newRepositoryIdValue, Connection connection) {
@@ -154,15 +157,22 @@ public class RepositoryChangeMetadataCommand extends ChangeMetadataCommand {
             } else if (isXstreamCdcTypeMode) {
                 IElementParameter elementParameter = node.getElementParameter(propName);
                 if (elementParameter != null) {
-                    IElementParameter schemaTypeParam = elementParameter.getParentParameter().getChildParameters()
-                            .get(EParameterName.SCHEMA_TYPE.getName());
-                    IElementParameter schemaParam = node.getElementParameterFromField(EParameterFieldType.SCHEMA_TYPE);
                     String componentName = node.getComponent().getName();
-                    if (componentName != null
-                            && componentName.equals("tOracleCDC") && schemaTypeParam != null && schemaParam != null && schemaParam.getValue() != null) { //$NON-NLS-1$
-                        schemaTypeParam.setValue(EmfComponent.BUILTIN);
-                        newOutputMetadata
-                                .setListColumns((((IMetadataTable) schemaParam.getValue()).clone(true)).getListColumns());
+                    if (oracleCdcComponent[0].equals(componentName) || oracleCdcComponent[1].equals(componentName)) {
+                        IElementParameter schemaTypeParam = elementParameter.getParentParameter().getChildParameters()
+                                .get(EParameterName.SCHEMA_TYPE.getName());
+                        IElementParameter schemaParam = node.getElementParameterFromField(EParameterFieldType.SCHEMA_TYPE);
+                        if (schemaTypeParam != null) {
+                            schemaTypeParam.setValue(EmfComponent.BUILTIN);
+                            if (schemaParam != null && schemaParam.getValue() != null
+                                    && schemaParam.getValue() instanceof IMetadataTable) {
+                                newOutputMetadata.setListColumns((((IMetadataTable) schemaParam.getValue()).clone(true))
+                                        .getListColumns());
+                            }
+                            if (oracleCdcComponent[1].equals(componentName)) {
+                                newOutputMetadata.setListColumns(new ArrayList<IMetadataColumn>());
+                            }
+                        }
                     }
                 }
                 setDBTableFieldValue(node, newOutputMetadata.getTableName(), oldOutputMetadata.getTableName());
