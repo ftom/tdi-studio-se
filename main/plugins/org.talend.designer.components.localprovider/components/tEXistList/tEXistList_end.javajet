@@ -20,10 +20,9 @@
 	List<Map<String, String>> files = (List<Map<String,String>>)ElementParameterParser.getObjectValue(node, "__FILES__");
 	dbLog = new DBLogUtil(node);
 %>
-			}
-		nb_file_<%=cid%>++;
-	}
-}
+			} <% /* "for String contentName" end */ %>
+	} <% /* "for String key_" end */ %>
+} <% /* "for java.util.Map" end */ %>
 <%dbLog.conn().closeTry(null);%>
 col_<%=cid%>.close();
 <%dbLog.conn().closeDone(null);%>

@@ -96,6 +96,7 @@
 				}
 %>
 						if(contentName_<%=cid%>.matches(finalMask_<%=cid%>)){
+							nb_file_<%=cid%>++;
 					        globalMap.put("<%=cid%>_CURRENT_FILE", contentName_<%=cid%>);
 					        globalMap.put("<%=cid%>_CURRENT_FILEPATH", <%=collection%> + contentName_<%=cid%>);
 						}
