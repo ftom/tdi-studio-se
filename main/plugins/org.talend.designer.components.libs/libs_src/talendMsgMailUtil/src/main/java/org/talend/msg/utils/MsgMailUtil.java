@@ -58,6 +58,7 @@ public class MsgMailUtil {
 		String fileName = attachment.attachFileName.toString();
 		if (attachment.attachLongFileName != null) {
 			fileName = attachment.attachLongFileName.toString();
+			processLog(Level.INFO,"Extracted attachment: '"+fileName+"'.");
 		}
 
 		File attachedFile = new File(dir, fileName);

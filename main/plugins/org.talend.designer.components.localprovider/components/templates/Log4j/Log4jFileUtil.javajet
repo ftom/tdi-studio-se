@@ -14,6 +14,7 @@
  			this.node = node;
  			this.cid = node.getUniqueName();
 			this.isLog4jEnabled = ("true").equals(org.talend.core.model.process.ElementParameterParser.getValue(node.getProcess(), "__LOG4J_ACTIVATE__"));
+			this.isLog4jEnabled = this.isLog4jEnabled && this.node.getComponent().isLog4JEnabled();
  		}
  		
  		public void setCid(String cid) {
