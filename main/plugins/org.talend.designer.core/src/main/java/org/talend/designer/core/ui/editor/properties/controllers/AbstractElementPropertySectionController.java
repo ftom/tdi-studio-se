@@ -1352,6 +1352,14 @@ public abstract class AbstractElementPropertySectionController implements Proper
             }
         }
 
+        // jobsetting view load the db info from current selected category
+        if (EComponentCategory.EXTRA.equals(section)) {
+            basePropertyParameter = elem.getElementParameter("PROPERTY_TYPE_IMPLICIT_CONTEXT"); //$NON-NLS-1$
+        }
+        if (EComponentCategory.STATSANDLOGS.equals(section)) {
+            basePropertyParameter = elem.getElementParameter("PROPERTY_TYPE"); //$NON-NLS-1$
+        }
+
         String type = null;
         ExtractMetaDataUtils extractMeta = ExtractMetaDataUtils.getInstance();
         if (typ != null && !typ.equals("")) { //$NON-NLS-1$
@@ -1533,6 +1541,14 @@ public abstract class AbstractElementPropertySectionController implements Proper
                     break;
                 }
             }
+        }
+
+        // jobsetting view load the db info from current selected category
+        if (EComponentCategory.EXTRA.equals(section)) {
+            basePropertyParameter = elem.getElementParameter("PROPERTY_TYPE_IMPLICIT_CONTEXT"); //$NON-NLS-1$
+        }
+        if (EComponentCategory.STATSANDLOGS.equals(section)) {
+            basePropertyParameter = elem.getElementParameter("PROPERTY_TYPE"); //$NON-NLS-1$
         }
 
         // qli modified to fix the bug "7364".
@@ -1731,7 +1747,7 @@ public abstract class AbstractElementPropertySectionController implements Proper
      * @return
      */
     protected String getStatsLogRepositoryId() {
-        if (elem instanceof StatsAndLogsElement) {
+        if (elem instanceof StatsAndLogsElement || elem instanceof Process) {
             IElementParameter statsLogContext = elem.getElementParameter("PROPERTY_TYPE");
             if (statsLogContext != null) {
                 Map<String, IElementParameter> childParameters = statsLogContext.getChildParameters();
@@ -1787,6 +1803,14 @@ public abstract class AbstractElementPropertySectionController implements Proper
                     break;
                 }
             }
+        }
+
+        // jobsetting view load the db info from current selected category
+        if (EComponentCategory.EXTRA.equals(section)) {
+            basePropertyParameter = elem.getElementParameter("PROPERTY_TYPE_IMPLICIT_CONTEXT"); //$NON-NLS-1$
+        }
+        if (EComponentCategory.STATSANDLOGS.equals(section)) {
+            basePropertyParameter = elem.getElementParameter("PROPERTY_TYPE"); //$NON-NLS-1$
         }
 
         connParameters = new ConnectionParameters();

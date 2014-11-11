@@ -60,6 +60,7 @@ import org.talend.core.model.metadata.builder.connection.DatabaseConnection;
 import org.talend.core.model.metadata.builder.database.ExtractMetaDataFromDataBase;
 import org.talend.core.model.metadata.builder.database.ExtractMetaDataUtils;
 import org.talend.core.model.metadata.builder.database.JavaSqlFactory;
+import org.talend.core.model.process.EComponentCategory;
 import org.talend.core.model.process.EParameterFieldType;
 import org.talend.core.model.process.IContextManager;
 import org.talend.core.model.process.IElementParameter;
@@ -360,8 +361,16 @@ public class DbTableController extends AbstractElementPropertySectionController 
         String statsLogPrositoryId = getStatsLogRepositoryId();
         DatabaseConnection connection = null;
         if (implicitRepositoryId != null || statsLogPrositoryId != null) {
-            if (implicitRepositoryId == null) {
-                implicitRepositoryId = statsLogPrositoryId;
+            // jobsetting view load the exist db info from current selected category
+            if (EComponentCategory.EXTRA.equals(section) && implicitRepositoryId == null) {
+                return connection;
+            }
+            if (EComponentCategory.STATSANDLOGS.equals(section)) {
+                if (statsLogPrositoryId != null) {
+                    implicitRepositoryId = statsLogPrositoryId;
+                } else {
+                    return connection;
+                }
             }
             IProxyRepositoryFactory proxyRepositoryFactory = DesignerPlugin.getDefault().getRepositoryService()
                     .getProxyRepositoryFactory();
