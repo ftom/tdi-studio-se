@@ -16,27 +16,21 @@ imports="
 <%@ include file="../templates/Log4j/Log4jDBConnUtil.javajet"%>
 <%
 	CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
-	INode node = (INode)codeGenArgument.getArgument();
-	
+	INode node = (INode)codeGenArgument.getArgument();	
 	String cid = node.getUniqueName();
-	
-	String dataAction = "INSERT";
     String dieOnError = ElementParameterParser.getValue(node, "__DIE_ON_ERROR__");
 	String tableName = ElementParameterParser.getValue(node,"__TABLE__");
-            
     String commitEvery = ElementParameterParser.getValue(node, "__COMMIT_EVERY__");
-	
 	String incomingConnName = null;
 	List<IMetadataColumn> columnList = null;
 	
-	List< ? extends IConnection> conns = node.getIncomingConnections();
+	List<? extends IConnection> conns = node.getIncomingConnections();
 	if(conns!=null && conns.size()>0){
 		IConnection conn = conns.get(0);
 		incomingConnName = conn.getName();
 	}
 	
 	List<IMetadataTable> metadatas = node.getMetadataList();
-	
 	if(metadatas != null && metadatas.size()>0){
 		IMetadataTable metadata = metadatas.get(0);
 		if(metadata != null){
@@ -143,13 +137,9 @@ class Column{
 	}
 }
 	StringBuilder insertColName = new StringBuilder();
-	
 	StringBuilder insertValueStmt = new StringBuilder();
-	
 	StringBuilder updateSetStmt = new StringBuilder();
-	
 	StringBuilder updateWhereStmt = new StringBuilder();
-	
 	List<Column> stmtStructure =  new LinkedList<Column>();
 	
 for(IMetadataColumn column:columnList){
@@ -317,416 +307,80 @@ if(isObject){
 	}
 if(isObject){
 	%>
-		
 }
-	
 <%
-}
-	}
-}
-
+		} /* "if(isObject)" end */
+	} /* "public void generateSetStmt" end */
+} /* "class Operation" end */
 
 Operation operation = new Operation();
-
 if(incomingConnName != null && columnList != null){
-	if(("INSERT").equals(dataAction)){
 		int counter = 1;
-		
 		for(Column column:colStruct){
 			String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getColumn().getTalendType(), column.getColumn().isNullable());
-			
-			//typeToGenerate = operation.generateType(typeToGenerate);
-			
 			operation.generateSetStmt(typeToGenerate,column,counter,incomingConnName,cid,0);
-			
-        	counter++;
-		}
-	%>
-        try{
-		pstmt_<%=cid %>.addBatch();
-        }catch(java.lang.Exception e)
-        {
-            <%
-            if (("true").equals(dieOnError)) {
-                %>
-                throw(e);
-                <%
-            } else {
-				log4jCodeGenerateUtil.logError(node,"error");
-                if(rejectConnName != null && rejectColumnList != null && rejectColumnList.size() > 0) {
-                    for(IMetadataColumn column : columnList) {
-                        %>
-                        <%=rejectConnName%>.<%=column.getLabel()%> = <%=incomingConnName%>.<%=column.getLabel()%>;
-                        <%
-                    }
-                    %>
-                    <%=rejectConnName%>.errorMessage = e.getMessage() + " - Line: " + tos_count_<%=node.getUniqueName() %>;
-                    <%
-                } else {
-                    %>
-                    System.err.print(e.getMessage());
-                    <%
-                }
-            } 
-            %>
-        }
-	<%
-	}else if(("UPDATE").equals(dataAction)){
-		int counterCol = 1;
-		
-		for(Column column:colStruct){
-			String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getColumn().getTalendType(), column.getColumn().isNullable());
-			
-			//typeToGenerate = operation.generateType(typeToGenerate);
-			
-			if(!column.getColumn().isKey()){
-				
-				operation.generateSetStmt(typeToGenerate,column,counterCol,incomingConnName,cid,0);
-				
-        		counterCol++;
-			}
-		}
-
-		for(Column column:colStruct){
-			String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getColumn().getTalendType(), column.getColumn().isNullable());
-			
-			//typeToGenerate = operation.generateType(typeToGenerate);
-			
-			if(column.getColumn().isKey()){
-			
-				operation.generateSetStmt(typeToGenerate,column,counterCol,incomingConnName,cid,0);
-				
-        		counterCol++;
-			}
-		}
-
-	%>
-        try{
-		pstmt_<%=cid %>.addBatch();
-        }catch(java.lang.Exception e)
-        {
-            <%
-            if (("true").equals(dieOnError)) {
-                %>
-                throw(e);
-                <%
-            } else {
-				log4jCodeGenerateUtil.logError(node,"error");
-                if(rejectConnName != null && rejectColumnList != null && rejectColumnList.size() > 0) {
-                    for(IMetadataColumn column : columnList) {
-                        %>
-                        <%=rejectConnName%>.<%=column.getLabel()%> = <%=incomingConnName%>.<%=column.getLabel()%>;
-                        <%
-                    }
-                    %>
-                    <%=rejectConnName%>.errorMessage = e.getMessage() + " - Line: " + tos_count_<%=node.getUniqueName() %>;
-                    <%
-                } else {
-                    %>
-                    System.err.print(e.getMessage());
-                    <%
-                }
-            } 
-            %>
-        }
-<%
-	}else if (("INSERT_OR_UPDATE").equals(dataAction)){
-%>
-
-<%
-		int columnIndex = 1;
-		for(Column column:colStruct)
-		{
-			if(column.getColumn().isKey())
-			{
-				String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getColumn().getTalendType(), column.getColumn().isNullable());
-				operation.generateSetStmt(typeToGenerate,column,columnIndex,incomingConnName,cid,0);
-				columnIndex++;				
-			}
-		}
-%>
-
-		java.sql.ResultSet rs_<%=cid%> = pstmt_<%=cid %>.executeQuery();
-		int checkCount_<%=cid%> = -1;
-		while(rs_<%=cid%>.next())
-		{
-			checkCount_<%=cid%> = rs_<%=cid%>.getInt(1);
-		}
-		if(checkCount_<%=cid%> > 0)
-		{
-			<%
-			int counterCol = 1;
-			for(Column column:colStruct)
-			{
-				String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getColumn().getTalendType(), column.getColumn().isNullable());
-				if(!column.getColumn().isKey())
-				{
-					operation.generateSetStmt(typeToGenerate,column,counterCol,incomingConnName,cid,2);
-					counterCol++;
-				}
-			}
-			for(Column column:colStruct)
-			{
-				String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getColumn().getTalendType(), column.getColumn().isNullable());
-				if(column.getColumn().isKey())
-				{
-					operation.generateSetStmt(typeToGenerate,column,counterCol,incomingConnName,cid,2);					
-	        		counterCol++;
-				}
-			}
-			%>
-            try{
-		pstmt_<%=cid %>.addBatch();
-			}catch(java.lang.Exception e)
-			{
-	            <%
-	            if (("true").equals(dieOnError)) {
-	                %>
-	                throw(e);
-	                <%
-	            } else {
-					log4jCodeGenerateUtil.logError(node,"error");
-	                if(rejectConnName != null && rejectColumnList != null && rejectColumnList.size() > 0) {
-	                    for(IMetadataColumn column : columnList) {
-	                        %>
-	                        <%=rejectConnName%>.<%=column.getLabel()%> = <%=incomingConnName%>.<%=column.getLabel()%>;
-	                        <%
-	                    }
-	                    %>
-	                    <%=rejectConnName%>.errorMessage = e.getMessage() + " - Line: " + tos_count_<%=node.getUniqueName() %>;
-	                    <%
-	                } else {
-	                    %>
-	                    System.err.print(e.getMessage());
-	                    <%
-	                }
-	            } 
-	            %>
-			}
-		}
-		else
-		{
-			<%
-			int counterInsert = 1;
-			for(Column columnInsert:colStruct)
-			{
-				String typeToGenerate = JavaTypesManager.getTypeToGenerate(columnInsert.getColumn().getTalendType(), columnInsert.getColumn().isNullable());
-				operation.generateSetStmt(typeToGenerate,columnInsert,counterInsert,incomingConnName,cid,1);
-				counterInsert++;
-			}
-			%>
-            try{
-		pstmt_<%=cid %>.addBatch();
-			}catch(java.lang.Exception e)
-			{
-	            <%
-	            if (("true").equals(dieOnError)) {
-	                %>
-	                throw(e);
-	                <%
-	            } else {
-					log4jCodeGenerateUtil.logError(node,"error");
-	                if(rejectConnName != null && rejectColumnList != null && rejectColumnList.size() > 0) {
-	                    for(IMetadataColumn column : columnList) {
-	                        %>
-	                        <%=rejectConnName%>.<%=column.getLabel()%> = <%=incomingConnName%>.<%=column.getLabel()%>;
-	                        <%
-	                    }
-	                    %>
-	                    <%=rejectConnName%>.errorMessage = e.getMessage() + " - Line: " + tos_count_<%=node.getUniqueName() %>;
-	                    <%
-	                } else {
-	                    %>
-	                    System.err.print(e.getMessage());
-	                    <%
-	                }
-	            } 
-	            %>
-			}
-		}
-
-<%
-	}else if (("UPDATE_OR_INSERT").equals(dataAction)){
-%>
-
-<%
-		int counterColUpdate = 1;
-		for(Column columnUpdate:colStruct){
-			String typeToGenerate = JavaTypesManager.getTypeToGenerate(columnUpdate.getColumn().getTalendType(), columnUpdate.getColumn().isNullable());
-			
-			//typeToGenerate = operation.generateType(typeToGenerate);
-			
-			if(!columnUpdate.getColumn().isKey()){
-			
-				operation.generateSetStmt(typeToGenerate,columnUpdate,counterColUpdate,incomingConnName,cid,2);
-				
-        		counterColUpdate++;
-			}
-		}
-
-		for(Column columnUpdate:colStruct){
-			String typeToGenerate = JavaTypesManager.getTypeToGenerate(columnUpdate.getColumn().getTalendType(), columnUpdate.getColumn().isNullable());
-			
-			//typeToGenerate = operation.generateType(typeToGenerate);
-			
-			if(columnUpdate.getColumn().isKey()){
-			
-				operation.generateSetStmt(typeToGenerate,columnUpdate,counterColUpdate,incomingConnName,cid,2);
-				
-        		counterColUpdate++;
-			}
-		}
-	%>
-
-    try{
-		pstmt_<%=cid %>.addBatch();
-	}catch(java.lang.Exception e)
-	{
-        <%
-        if (("true").equals(dieOnError)) {
-            %>
-            throw(e);
-            <%
-        } else {
-			log4jCodeGenerateUtil.logError(node,"error");
-            if(rejectConnName != null && rejectColumnList != null && rejectColumnList.size() > 0) {
-                for(IMetadataColumn column : columnList) {
-                    %>
-                    <%=rejectConnName%>.<%=column.getLabel()%> = <%=incomingConnName%>.<%=column.getLabel()%>;
-                    <%
-                }
-                %>
-                <%=rejectConnName%>.errorMessage = e.getMessage() + " - Line: " + tos_count_<%=node.getUniqueName() %>;
-                <%
-            } else {
-                %>
-                System.err.print(e.getMessage());
-                <%
-            }
-        } 
-        %>
-	}
-	if(updatedCount_<%=cid%> == 0) {
-		<%
-		int counter = 1;
-		
-		for(Column column:colStruct){
-			String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getColumn().getTalendType(), column.getColumn().isNullable());
-			
-			//typeToGenerate = operation.generateType(typeToGenerate);
-			
-			operation.generateSetStmt(typeToGenerate,column,counter,incomingConnName,cid,1);
-			
-        	counter++;
+	    	counter++;
 		}
 		%>
-        try{
-		pstmt_<%=cid %>.addBatch();
-            nb_line_inserted_<%=cid%>++;
-		}catch(java.lang.Exception e)
-		{
-            <%
-            if (("true").equals(dieOnError)) {
-                %>
-                throw(e);
-                <%
-            } else {
-				log4jCodeGenerateUtil.logError(node,"error");
-                if(rejectConnName != null && rejectColumnList != null && rejectColumnList.size() > 0) {
-                    for(IMetadataColumn column : columnList) {
-                        %>
-                        <%=rejectConnName%>.<%=column.getLabel()%> = <%=incomingConnName%>.<%=column.getLabel()%>;
-                        <%
-                    }
-                    %>
-                    <%=rejectConnName%>.errorMessage = e.getMessage() + " - Line: " + tos_count_<%=node.getUniqueName() %>;
-                    <%
-                } else {
-                    %>
-                    System.err.print(e.getMessage());
-                    <%
-                }
-            } 
-            %>
-		}
-	} else {
-	    nb_line_update_<%=cid%> ++;
-	}
+		try{
+				pstmt_<%=cid %>.addBatch();
+		   }catch(java.lang.Exception e){
+		            <% if (("true").equals(dieOnError)) { %>
+		                throw(e);
+					<% } else {
+						log4jCodeGenerateUtil.logError(node,"error");
+		                if(rejectConnName != null && rejectColumnList != null && rejectColumnList.size() > 0) {
+			                    for(IMetadataColumn column : columnList) {
+				                        %>
+				                        <%=rejectConnName%>.<%=column.getLabel()%> = <%=incomingConnName%>.<%=column.getLabel()%>;
+				                        <%
+			                    } %>
+		                    <%=rejectConnName%>.errorMessage = e.getMessage() + " - Line: " + tos_count_<%=node.getUniqueName() %>;
+		                    <%
+		                } else {
+		                    %>
+		                    System.err.print(e.getMessage());
+		                    <%
+		                }
+		            } 
+		            %>
+		        }
+			<%
 
-<%
-	
-	}else if (("DELETE").equals(dataAction)){
-		int keyCounter = 1;
-		for(Column column:colStruct){
-			String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getColumn().getTalendType(), column.getColumn().isNullable());
-			
-			//typeToGenerate = operation.generateType(typeToGenerate);
-			
-			if(column.getColumn().isKey()){
-				
-				operation.generateSetStmt(typeToGenerate,column,keyCounter,incomingConnName,cid,0);
-				
-        		keyCounter++;
+			if(outgoingConns != null && outgoingConns.size() > 0) {
+			    for(IConnection outgoingConn : outgoingConns) {
+			        if(!outgoingConn.getName().equals(rejectConnName) &&
+			        	outgoingConn.getLineStyle().hasConnectionCategory(IConnectionCategory.DATA) ) {
+			            for(IMetadataColumn column : columnList) {
+			                %>
+			                <%=outgoingConn.getName()%>.<%=column.getLabel()%> = <%=incomingConnName%>.<%=column.getLabel()%>;
+			                <%
+			            }
+			        }
+			    }
 			}
-		}
-	%>
-    try{
-		pstmt_<%=cid %>.addBatch();
-		}catch(java.lang.Exception e)
-		{
-            <%
-            if (("true").equals(dieOnError)) {
-                %>
-                throw(e);
-                <%
-            } else {
-				log4jCodeGenerateUtil.logError(node,"error");
-                if(rejectConnName != null && rejectColumnList != null && rejectColumnList.size() > 0) {
-                    for(IMetadataColumn column : columnList) {
-                        %>
-                        <%=rejectConnName%>.<%=column.getLabel()%> = <%=incomingConnName%>.<%=column.getLabel()%>;
-                        <%
-                    }
-                    %>
-                    <%=rejectConnName%>.errorMessage = e.getMessage() + " - Line: " + tos_count_<%=node.getUniqueName() %>;
-                    <%
-                } else {
-                    %>
-                    System.err.print(e.getMessage());
-                    <%
-                }
-            } 
-            %>
-		}
-	<%
-	}
-	
-	if(outgoingConns != null && outgoingConns.size() > 0) {
-	    for(IConnection outgoingConn : outgoingConns) {
-	        if(!outgoingConn.getName().equals(rejectConnName) &&
-	        	outgoingConn.getLineStyle().hasConnectionCategory(IConnectionCategory.DATA) ) {
-	            for(IMetadataColumn column : columnList) {
-	                %>
-	                <%=outgoingConn.getName()%>.<%=column.getLabel()%> = <%=incomingConnName%>.<%=column.getLabel()%>;
-	                <%	                
-	            }
-	        }
-	    }
-	}
-%>
+		%>
 	    commitCounter_<%=cid%>++;
 <%
 	////////////commit every////////////
 	if(!("").equals(commitEvery) && !("0").equals(commitEvery)){
 	%>
-        
         if(commitEvery_<%=cid%> <= commitCounter_<%=cid%>){
-        
-			pstmt_<%=cid %>.executeBatch();
+			int[] resultArr = pstmt_<%=cid %>.executeBatch();
 			pstmt_<%=cid %>.clearBatch();
         	commitCounter_<%=cid%>=0;
-        	
-        }	
+        	int sum = 0;
+        	for(int i : resultArr){
+        		if(i==-3){//EXECUTE_FAILED
+        		      System.err.println("Query executed failed.");
+        		}else if(i==-2){//SUCCESS_NO_INFO
+        		      System.err.println("Query was processed successed but the number of rows affected is unknown.");
+        		}else{
+        		     sum += (i<0 ? 0 : i);
+        		}
+        	}
+        	insertedCount_<%=cid%> += sum;
+        }
 	<%
 	}
 }

@@ -1,4 +1,4 @@
-<%@ jet 
+<%@ jet
 imports="
 		org.talend.designer.codegen.config.CodeGeneratorArgument
 		org.talend.core.model.process.INode
@@ -11,40 +11,23 @@ imports="
 " 
 %>
 <%@ include file="../templates/Log4j/Log4jDBConnUtil.javajet"%>
-
 <%
 	CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
 	INode node = (INode)codeGenArgument.getArgument();
 	String cid = node.getUniqueName();
-    
     String dbServer = ElementParameterParser.getValue(node, "__SERVER__");
-    
     String dbname= ElementParameterParser.getValue(node, "__DBNAME__");
-    
     String dbhost = ElementParameterParser.getValue(node, "__HOST__");
-    	
 	String dbuser= ElementParameterParser.getValue(node, "__USER__");
-	
-
-	
 	String tableName = ElementParameterParser.getValue(node,"__TABLE__");
-	
-	String dataAction = "INSERT";
-	
-	String tableAction = "false";
-	
 	String commitEvery = ElementParameterParser.getValue(node, "__COMMIT_EVERY__");
 	String dbproperties = ElementParameterParser.getValue(node, "__PROPERTIES__");
-	
 	boolean isLog4jEnabled = ("true").equals(ElementParameterParser.getValue(node.getProcess(), "__LOG4J_ACTIVATE__"));
 %>
-
 int nb_line_<%=cid%> = 0;
 int nb_line_update_<%=cid%> = 0;
 int nb_line_inserted_<%=cid%> = 0;
-int nb_line_deleted_<%=cid%> = 0;
 
-int deletedCount_<%=cid%>=0;
 int updatedCount_<%=cid%>=0;
 int insertedCount_<%=cid%>=0;
 
@@ -58,7 +41,6 @@ if(dbProperties_<%=cid%> != null && dbProperties_<%=cid%>.trim().length() > 0) {
 }
 <%
 List<IMetadataColumn> columnList = null;
-
 List<IMetadataTable> metadatas = node.getMetadataList();
 if(metadatas !=null && metadatas.size()>0){
 	IMetadataTable metadata = metadatas.get(0);
@@ -68,64 +50,19 @@ if(metadatas !=null && metadatas.size()>0){
 }
 %>
 
-<%
-if(!("INSERT").equals(dataAction))
-{
-    int keyCount = 0;
-    for(IMetadataColumn column:columnList)
-    {
-    	if(column.isKey())
-    	{
-    		keyCount++;
-    	}
-    }
-    %>
-    int keyCount_<%=cid%> = <%=keyCount%>;
-    if(keyCount_<%=cid%> < 1)
-    {
-    	throw new RuntimeException("For update or delete, Schema must have a key.");
-    }
-<%
-}
-%> 
-
 String dbUser_<%=cid %> = <%=dbuser%>;
-
-<%
-String passwordFieldName = "__PASS__";
-%>
-
+<% String passwordFieldName = "__PASS__"; %>
 <%@ include file="@{org.talend.designer.components.localprovider}/components/templates/password.javajet"%>
-
 String dbPwd_<%=cid %> = decryptedPassword_<%=cid%>;
+
 java.sql.Connection conn_<%=cid%> = null;
 <%
-  	log4jCodeGenerateUtil.debugConnectionParams(node);	
+  	log4jCodeGenerateUtil.debugConnectionParams(node);
 	log4jCodeGenerateUtil.connect(node);
-if(("true").equals(tableAction))
-{
-%>
-java.sql.Statement stmtClear_<%=cid%> = conn_<%=cid%>.createStatement();
-deletedCount_<%=cid%> = deletedCount_<%=cid%> + stmtClear_<%=cid%>.executeUpdate("delete from " + <%=tableName%>);
-<%	
-}
 %>
 
-<%if(("INSERT_OR_UPDATE").equals(dataAction)||("UPDATE_OR_INSERT").equals(dataAction)){%>
-
-java.sql.PreparedStatement pstmtInsert_<%=cid %> =null;
-
-java.sql.PreparedStatement pstmtUpdate_<%=cid %> =null;
-
 java.sql.PreparedStatement pstmt_<%=cid %> =null;
-
-<%}else{%>
-
-java.sql.PreparedStatement pstmt_<%=cid %> =null;
-	
 <%
-}
-
 if(columnList != null && columnList.size()>0){
 
 class Column{
@@ -212,19 +149,13 @@ class Column{
 }
 
 StringBuilder insertColName = new StringBuilder();
-
 StringBuilder insertValueStmt = new StringBuilder();
-
 StringBuilder updateSetStmt = new StringBuilder();
-
 StringBuilder updateWhereStmt = new StringBuilder();
-
 List<Column> stmtStructure =  new LinkedList<Column>();
 
 for(IMetadataColumn column:columnList){
-
 	stmtStructure.add(new Column(column));
-
 }
 
 int counterOuter =0;
@@ -234,7 +165,7 @@ boolean firstNoneKey = true;
 for(Column colStmt:stmtStructure){
 	String suffix = ",";
 	
-	if(colStmt.isReplaced()){		
+	if(colStmt.isReplaced()){
 		List<Column> replacedColumns = colStmt.getReplacement();
 		int counterReplace = 0;
 		if(counterOuter==(stmtStructure.size()-1) && counterReplace==(replacedColumns.size()-1) ){
@@ -304,56 +235,14 @@ for(Column colStmt:stmtStructure){
 	} else {
     	tableName_<%=cid%> = dbname_<%=cid%> + "." + <%=tableName%>;
 	}
+		pstmt_<%=cid %> = conn_<%=cid%>.prepareStatement("INSERT INTO "+tableName_<%=cid%>+" (<%=insertColName.toString()%>) VALUES (<%=insertValueStmt.toString()%>)");
+		int commitCounter_<%=cid%> = 0;
 <%
-
-	if(("INSERT").equals(dataAction)){
-	%>	
-	
-pstmt_<%=cid %> = conn_<%=cid%>.prepareStatement("INSERT INTO "+tableName_<%=cid%>+" (<%=insertColName.toString()%>) VALUES (<%=insertValueStmt.toString()%>)");
-
-	<%
-	}else if (("UPDATE").equals(dataAction)){
-	%>
-	
-pstmt_<%=cid %> = conn_<%=cid%>.prepareStatement("UPDATE "+tableName_<%=cid%>+" SET <%=updateSetStmt.toString()%> WHERE <%=updateWhereStmt.toString()%>");
-
-	<%		
-	}else if (("INSERT_OR_UPDATE").equals(dataAction)){
-	%>
-pstmt_<%=cid %> = conn_<%=cid%>.prepareStatement("SELECT COUNT(1) FROM " + tableName_<%=cid%> + " WHERE <%=updateWhereStmt.toString()%>");	
-
-pstmtInsert_<%=cid %> = conn_<%=cid%>.prepareStatement("INSERT INTO "+tableName_<%=cid%>+" (<%=insertColName.toString()%>) VALUES (<%=insertValueStmt.toString()%>)");
-
-pstmtUpdate_<%=cid %> = conn_<%=cid%>.prepareStatement("UPDATE "+tableName_<%=cid%>+" SET <%=updateSetStmt.toString()%> WHERE <%=updateWhereStmt.toString()%>");
-	
-	<%
-	}else if (("UPDATE_OR_INSERT").equals(dataAction)){
-	%>
-
-pstmtUpdate_<%=cid %> = conn_<%=cid%>.prepareStatement("UPDATE "+tableName_<%=cid%>+" SET <%=updateSetStmt.toString()%> WHERE <%=updateWhereStmt.toString()%>");
-
-pstmtInsert_<%=cid %> = conn_<%=cid%>.prepareStatement("INSERT INTO "+tableName_<%=cid%>+" (<%=insertColName.toString()%>) VALUES (<%=insertValueStmt.toString()%>)");
-		
-	<%
-			
-	}else if (("DELETE").equals(dataAction)){
-	%>
-	
-pstmt_<%=cid %> = conn_<%=cid%>.prepareStatement("DELETE  FROM "+tableName_<%=cid%>+" WHERE <%=updateWhereStmt.toString()%>");
-
-	<%		
-	}
+	if(!"".equals(commitEvery) && !"0".equals(commitEvery)){
 %>
-	int commitCounter_<%=cid%> = 0;
-<%
-	if(!("").equals(commitEvery)&&!("0").equals(commitEvery)){
-%>
-
-int commitEvery_<%=cid%> = <%=commitEvery%>;
-
-conn_<%=cid%>.setAutoCommit(false);
+	int commitEvery_<%=cid%> = <%=commitEvery%>;
+	conn_<%=cid%>.setAutoCommit(false);
 <%
 	}
-}
+} /* if columnList end */
 %>
-

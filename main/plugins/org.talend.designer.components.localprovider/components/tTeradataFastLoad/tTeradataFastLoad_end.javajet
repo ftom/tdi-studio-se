@@ -9,62 +9,30 @@ imports="
 <%
 	CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
 	INode node = (INode)codeGenArgument.getArgument();
-	
 	String cid = node.getUniqueName();
-	
-	String dataAction = "INSERT";
-	
 	String commitEvery = ElementParameterParser.getValue(node, "__COMMIT_EVERY__");
-	
 	boolean isLog4jEnabled = ("true").equals(ElementParameterParser.getValue(node.getProcess(), "__LOG4J_ACTIVATE__"));
-	
-	if(("INSERT_OR_UPDATE").equals(dataAction)||("UPDATE_OR_INSERT").equals(dataAction)){
-
 %>
 
-if(pstmtUpdate_<%=cid%> != null){
-
-        pstmtUpdate_<%=cid %>.executeBatch();
-		pstmtUpdate_<%=cid %>.clearBatch();
-		pstmtUpdate_<%=cid %>.close();
-	
-} 
-if(pstmtInsert_<%=cid %> != null){
-
-        pstmtInsert_<%=cid %>.executeBatch();
-		pstmtInsert_<%=cid %>.clearBatch();
-		pstmtInsert_<%=cid %>.close();
-	
-}
-if(pstmt_<%=cid %> != null) {
-
-        pstmt_<%=cid %>.executeBatch();
-		pstmt_<%=cid %>.clearBatch();
-		pstmt_<%=cid %>.close();
-	
-}
-<%if(isLog4jEnabled){%>
-	log.info("<%=cid%> - Starting to commit.");
-<%}%>
-conn_<%=cid%>.commit();
-<%if(isLog4jEnabled){%>
-	log.info("<%=cid%> - Commit has succeeded.");
-	log.info("<%=cid%> - Closing the connection to the database.");
-<%}%>
-conn_<%=cid%> .close();
-<%if(isLog4jEnabled){%>
-	log.info("<%=cid%> - Connection to the database closed.");
-<%}%>
-
-<%	
-	}else{
-%>
 if (commitCounter_<%=cid%> > 0) {
-	pstmt_<%=cid %>.executeBatch();
+	int[] resultArr = pstmt_<%=cid %>.executeBatch();
 	pstmt_<%=cid %>.clearBatch();
 	commitCounter_<%=cid%>=0;
+	
+	int sum = 0;
+	for(int i : resultArr){
+		if(i==-3){//EXECUTE_FAILED
+		      System.err.println("Query executed failed.");
+		}else if(i==-2){//SUCCESS_NO_INFO
+		      System.err.println("Query was processed successed but the number of rows affected is unknown.");
+		}else{
+		     sum += (i<0 ? 0 : i);
+		}
+	}
+	insertedCount_<%=cid%> += sum;
 }
 pstmt_<%=cid %>.close();
+
 <%if(isLog4jEnabled){%>
 	log.info("<%=cid%> - Starting to commit.");
 <%}%>
@@ -77,15 +45,11 @@ conn_<%=cid%> .close();
 <%if(isLog4jEnabled){%>
 	log.info("<%=cid%> - Connection to the database closed.");
 <%}%>
-<%
-	}
-%>
-	nb_line_inserted_<%=cid%>=nb_line_inserted_<%=cid%> + insertedCount_<%=cid%>;
 
-globalMap.put("<%=cid %>_NB_LINE",nb_line_<%=cid%>);
-globalMap.put("<%=cid %>_NB_LINE_INSERTED",nb_line_inserted_<%=cid%>);
-			
+	nb_line_inserted_<%=cid%>=nb_line_inserted_<%=cid%> + insertedCount_<%=cid%>;
+	globalMap.put("<%=cid %>_NB_LINE",nb_line_<%=cid%>);
+	globalMap.put("<%=cid %>_NB_LINE_INSERTED",nb_line_inserted_<%=cid%>);
+
 <%if(isLog4jEnabled){%>
 	log.info("<%=cid%> - Loaded records count:" + nb_line_inserted_<%=cid%> + "." );
 <%}%>
-
