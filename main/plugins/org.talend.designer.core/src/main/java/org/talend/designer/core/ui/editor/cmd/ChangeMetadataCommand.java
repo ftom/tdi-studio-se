@@ -607,6 +607,11 @@ public class ChangeMetadataCommand extends Command {
                     }
                     MetadataToolHelper.copyTable(clone, node.getMetadataFromConnector(connector.getName()));
                 } else {
+                    if (EConnectionType.FLOW_MAIN.equals(connector.getDefaultConnectionType())) {
+                        if (connector.getLinkName() != null && connector.getLinkName().startsWith("Joblet")) { //$NON-NLS-1$
+                            continue;
+                        }
+                    }
                     // if there is some other schema dependant of this one, modify them
                     MetadataToolHelper.copyTable(newOutputMetadata, node.getMetadataFromConnector(connector.getName()));
                 }
