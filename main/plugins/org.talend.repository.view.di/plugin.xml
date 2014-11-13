@@ -11,7 +11,7 @@
             id="org.talend.repository.viewer.root.businessModels"
             labelProvider="org.talend.repository.viewer.label.RepositoryViewLabelProvider"
             name="%NavigatorContent.businessModels"
-            priority="high">
+            priority="higher">
          <triggerPoints>
             <or>
                <adapt
