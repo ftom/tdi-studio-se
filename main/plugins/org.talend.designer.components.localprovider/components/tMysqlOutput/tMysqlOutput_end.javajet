@@ -44,6 +44,7 @@ skeleton="../templates/db_output_bulk.skeleton"
 	boolean supportDuplicateUpdate = "true".equalsIgnoreCase(ElementParameterParser.getValue(node,"__ON_DUPLICATE_KEY_UPDATE__"));
 	
 	String dieOnError = ElementParameterParser.getValue(node, "__DIE_ON_ERROR__");
+	boolean onErrDie = "true".equals(dieOnError);
 	
 	boolean useBatchSize = ("true").equals(ElementParameterParser.getValue(node,"__USE_BATCH_SIZE__"));
 	
@@ -337,7 +338,15 @@ skeleton="../templates/db_output_bulk.skeleton"
 	    
 	            row2Count<%=cid%>++;
 	        }        
-	        insertedCount_<%=cid%> = insertedCount_<%=cid%> + pstmt_<%=cid %>.executeUpdate();
+	        try{
+	        	insertedCount_<%=cid%> = insertedCount_<%=cid%> + pstmt_<%=cid %>.executeUpdate();
+	        }catch(Exception e){
+	        	<% if(onErrDie){ %>
+	        	         throw e;
+	        	<% }else{ 
+	        		dbLog.logIgnoredException("e.getMessage()");
+	        	 } %>
+	        }
 	    }
 <%	
 		} else if ("MYSQL_5".equals(dbVersion)) {
@@ -378,8 +387,8 @@ skeleton="../templates/db_output_bulk.skeleton"
             	    insertedCount_<%=cid%> += countSum_<%=cid%>;
 	    	    	<%
 	    	    	}
-	    	    	%> 
-    	    		<%dbLog.logPrintedException("e.getMessage()");%>
+					dbLog.logPrintedException("e.getMessage()");
+					%>
                 	System.err.println(e.getMessage());
                 	<%
                 	}%>
@@ -473,8 +482,8 @@ skeleton="../templates/db_output_bulk.skeleton"
     	%>
     	deletedCount_<%=cid%> += countSum_<%=cid%>;
     	<%
-    	}%>
-		<%dbLog.logPrintedException("e.getMessage()");%>
+    	}
+    	dbLog.logPrintedException("e.getMessage()");%>
     	System.err.println(e.getMessage());
     	<%
     	}%>                	

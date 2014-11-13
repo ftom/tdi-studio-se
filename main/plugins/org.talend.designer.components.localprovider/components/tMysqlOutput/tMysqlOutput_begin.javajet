@@ -53,7 +53,7 @@ skeleton="../templates/db_output_bulk.skeleton"
 	String dataAction = ElementParameterParser.getValue(node,"__DATA_ACTION__");
 	
 	String tableAction = ElementParameterParser.getValue(node,"__TABLE_ACTION__");
-	
+	boolean dieOnError = "true".equals(ElementParameterParser.getValue(node, "__DIE_ON_ERROR__"));
 	String commitEvery = ElementParameterParser.getValue(node, "__COMMIT_EVERY__");
 	boolean extendedInsert = false;
 	
@@ -316,7 +316,15 @@ if (useHintOptions) {
 
 if(columnList != null && columnList.size() > 0) {
     %>
-    	<%@ include file="../templates/_tableActionForOutput.javajet"%>
+    	try{
+    		<%@ include file="../templates/_tableActionForOutput.javajet"%>
+    	}catch(Exception e){
+    		<% if(dieOnError){ %>
+    		   	   throw e;
+	   	   <% }else{ 
+	   	   		 dbLog.logIgnoredException("e.getMessage()");
+	   	    } %>
+    	}
     <%
     Map<String, StringBuilder> actionSQLMap = getManager(dbmsId, cid).createProcessSQL(stmtStructure);
     StringBuilder insertColName = actionSQLMap.get(INSERT_COLUMN_NAME);   

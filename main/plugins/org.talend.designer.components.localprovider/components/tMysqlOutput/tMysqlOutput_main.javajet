@@ -31,6 +31,7 @@ skeleton="../templates/db_output_bulk.skeleton"
 	String table = ElementParameterParser.getValue(node,"__TABLE__");
 	String dbVersion = ElementParameterParser.getValue(node, "__DB_VERSION__");
     String dieOnError = ElementParameterParser.getValue(node, "__DIE_ON_ERROR__");
+    boolean onErrDie = "true".equals(dieOnError);
 	String tableName = ElementParameterParser.getValue(node,"__TABLE__");
 	String dbmsId = ElementParameterParser.getValue(node,"__MAPPING__");
 	List<Map<String, String>> addCols =
@@ -149,7 +150,15 @@ if (useHintOptions) {
 
 if(columnList != null && columnList.size() > 0) {
     %>
-    	<%@ include file="../templates/_tableActionForOutput.javajet"%>
+    	try{
+    		<%@ include file="../templates/_tableActionForOutput.javajet"%>
+    	}catch(Exception e){
+    		<% if(onErrDie){ %>
+    		   	   throw e;
+        	<% }else{ 
+        			dbLog.logIgnoredException("e.getMessage()");
+        	 } %>
+    	}
     <%
     Map<String, StringBuilder> actionSQLMap = getManager(dbmsId, cid).createProcessSQL(stmtStructure);
     StringBuilder insertColName = actionSQLMap.get(INSERT_COLUMN_NAME);   
@@ -719,10 +728,18 @@ if(columnList != null && columnList.size() > 0) {
 			}
 %>	         
 	                if(rowCount<%=cid%> == <%=numPerInsert%>){ 
-	                    insertedCount_<%=cid%> = insertedCount_<%=cid%> + pstmt_<%=cid %>.executeUpdate();
+	                    try{
+	                    	insertedCount_<%=cid%> = insertedCount_<%=cid%> + pstmt_<%=cid %>.executeUpdate();
+	                    }catch(Exception e){
+	                    	<% if(onErrDie){ %>
+	                    	     throw e;
+			        	<% }else{ 
+			        			 dbLog.logIgnoredException("e.getMessage()");
+			        	 } %>
+	                    }
 	                    exInsertColValueList<%=cid%>.clear();
 	                    rowCount<%=cid%> = 0;
-			    counter<%=cid%>=1;
+					    counter<%=cid%>=1;
 	                }    
 <% 
 				} else if ("MYSQL_5".equals(dbVersion)) {
@@ -1057,7 +1074,16 @@ if(columnList != null && columnList.size() > 0) {
     		}
     		%>
     
-    		java.sql.ResultSet rs_<%=cid%> = pstmt_<%=cid %>.executeQuery();
+    		java.sql.ResultSet rs_<%=cid%> = null;
+    		try{
+    			rs_<%=cid%> = pstmt_<%=cid %>.executeQuery();
+    		}catch(Exception e){
+    			 <% if(onErrDie){ %>
+    			     throw e;
+			     <% }else{ 
+			     	   dbLog.logIgnoredException("e.getMessage()");
+			      } %>
+    		}
     		int checkCount_<%=cid%> = -1;
     		while(rs_<%=cid%>.next()) {
     			checkCount_<%=cid%> = rs_<%=cid%>.getInt(1);
