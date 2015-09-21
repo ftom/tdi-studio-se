@@ -45,6 +45,11 @@ public class ChangeLocalModeForSparkConfiguration extends
 		if (type != null) {
 			toReturn.add(type);
 		}
+		type = ERepositoryObjectType
+				.getType("PROCESS_SPARKSTREAMING"); //$NON-NLS-1$
+		if (type != null) {
+			toReturn.add(type);
+		}
 		return toReturn;
 	}
 
